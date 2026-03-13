@@ -1,5 +1,6 @@
-package dao;
+package dao.impl;
 
+import dao.interfaces.IRepairDAO;
 import model.Repair;
 import model.DatabaseConnection;
 import java.sql.*;
@@ -7,14 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class RepairDAO {
+public class RepairDAO implements IRepairDAO {
     private static final Logger logger = Logger.getLogger(RepairDAO.class.getName());
 
+    @Override
     public boolean addRepair(Repair repair) {
         String sql = "INSERT INTO repairs (car_id, description, status, cost, start_date, mechanic_id) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, repair.getCarId());
             pstmt.setString(2, repair.getDescription());
@@ -24,6 +26,15 @@ public class RepairDAO {
             pstmt.setInt(6, repair.getMechanicId());
 
             int result = pstmt.executeUpdate();
+
+            if (result > 0) {
+                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        repair.setId(rs.getInt(1));
+                    }
+                }
+            }
+
             logger.info("Ремонт добавлен для автомобиля ID: " + repair.getCarId());
             return result > 0;
 
@@ -33,6 +44,7 @@ public class RepairDAO {
         }
     }
 
+    @Override
     public List<Repair> getRepairsByCar(int carId) {
         List<Repair> repairs = new ArrayList<>();
         String sql = "SELECT * FROM repairs WHERE car_id = ? ORDER BY start_date DESC";
@@ -44,8 +56,7 @@ public class RepairDAO {
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                Repair repair = createRepairFromResultSet(rs);
-                repairs.add(repair);
+                repairs.add(extractRepairFromResultSet(rs));
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения ремонтов: " + e.getMessage());
@@ -53,6 +64,7 @@ public class RepairDAO {
         return repairs;
     }
 
+    @Override
     public List<Repair> getAllRepairs() {
         List<Repair> repairs = new ArrayList<>();
         String sql = "SELECT * FROM repairs ORDER BY start_date DESC";
@@ -62,8 +74,7 @@ public class RepairDAO {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Repair repair = createRepairFromResultSet(rs);
-                repairs.add(repair);
+                repairs.add(extractRepairFromResultSet(rs));
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения всех ремонтов: " + e.getMessage());
@@ -71,6 +82,7 @@ public class RepairDAO {
         return repairs;
     }
 
+    @Override
     public boolean updateRepairStatus(int repairId, String status) {
         String sql = "UPDATE repairs SET status = ? WHERE id = ?";
 
@@ -90,6 +102,7 @@ public class RepairDAO {
         }
     }
 
+    @Override
     public boolean completeRepair(int repairId) {
         String sql = "UPDATE repairs SET status = 'COMPLETED', end_date = ? WHERE id = ?";
 
@@ -109,6 +122,7 @@ public class RepairDAO {
         }
     }
 
+    @Override
     public Repair getRepairById(int repairId) {
         String sql = "SELECT * FROM repairs WHERE id = ?";
 
@@ -119,7 +133,7 @@ public class RepairDAO {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                return createRepairFromResultSet(rs);
+                return extractRepairFromResultSet(rs);
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения ремонта: " + e.getMessage());
@@ -127,7 +141,7 @@ public class RepairDAO {
         return null;
     }
 
-    private Repair createRepairFromResultSet(ResultSet rs) throws SQLException {
+    private Repair extractRepairFromResultSet(ResultSet rs) throws SQLException {
         Repair repair = new Repair();
         repair.setId(rs.getInt("id"));
         repair.setCarId(rs.getInt("car_id"));
@@ -137,7 +151,7 @@ public class RepairDAO {
         repair.setStartDate(java.time.LocalDate.parse(rs.getString("start_date")));
 
         String endDate = rs.getString("end_date");
-        if (endDate != null) {
+        if (endDate != null && !endDate.isEmpty()) {
             repair.setEndDate(java.time.LocalDate.parse(endDate));
         }
 

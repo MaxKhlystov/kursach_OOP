@@ -9,6 +9,12 @@ public class DatabaseConnection {
     private static Connection connection;
 
     static {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            logger.severe(e.getMessage());
+        }
+
         initializeDatabase();
     }
 
@@ -16,10 +22,10 @@ public class DatabaseConnection {
         try {
             if (connection == null || connection.isClosed()) {
                 connection = DriverManager.getConnection(DB_URL);
-                logger.info("✅ База данных подключена: " + DB_URL);
+                logger.info("База данных подключена: " + DB_URL);
             }
         } catch (SQLException e) {
-            logger.severe("❌ Ошибка подключения к БД: " + e.getMessage());
+            logger.severe("Ошибка подключения к БД: " + e.getMessage());
             throw new RuntimeException("Database connection failed", e);
         }
         return connection;
@@ -28,11 +34,11 @@ public class DatabaseConnection {
     private static void initializeDatabase() {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
-            // Таблица пользователей с уникальными constraints
+
+            // Таблица пользователей
             stmt.execute("""
-                CREATE TABLE users (
+                CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
                     password TEXT NOT NULL,
                     role TEXT NOT NULL CHECK(role IN ('CLIENT', 'MECHANIC')),
                     email TEXT UNIQUE NOT NULL,
@@ -44,7 +50,7 @@ public class DatabaseConnection {
 
             // Таблица автомобилей
             stmt.execute("""
-                CREATE TABLE cars (
+                CREATE TABLE IF NOT EXISTS cars (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     brand TEXT NOT NULL,
                     model TEXT NOT NULL,
@@ -59,7 +65,7 @@ public class DatabaseConnection {
 
             // Таблица ремонтов
             stmt.execute("""
-                CREATE TABLE repairs (
+                CREATE TABLE IF NOT EXISTS repairs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     car_id INTEGER NOT NULL,
                     description TEXT NOT NULL,
@@ -74,9 +80,9 @@ public class DatabaseConnection {
                 )
             """);
 
-            // Таблица уведомлений
+            //таблица уведомлений
             stmt.execute("""
-                CREATE TABLE notifications (
+                CREATE TABLE IF NOT EXISTS notifications (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     message TEXT NOT NULL,
@@ -86,21 +92,10 @@ public class DatabaseConnection {
                 )
             """);
 
-            logger.info("✅ Таблицы созданы успешно");
+            logger.info("Таблицы созданы успешно");
 
         } catch (SQLException e) {
-            logger.severe("❌ Ошибка инициализации БД: " + e.getMessage());
-        }
-    }
-
-    private static boolean columnExists(Connection conn, String tableName, String columnName) {
-        try {
-            DatabaseMetaData meta = conn.getMetaData();
-            ResultSet columns = meta.getColumns(null, null, tableName, columnName);
-            return columns.next();
-        } catch (SQLException e) {
-            logger.severe("❌ Ошибка проверки колонки: " + e.getMessage());
-            return false;
+            logger.severe("Ошибка инициализации БД: " + e.getMessage());
         }
     }
 
@@ -108,10 +103,10 @@ public class DatabaseConnection {
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
-                logger.info("✅ Соединение с БД закрыто");
+                logger.info("Соединение с БД закрыто");
             }
         } catch (SQLException e) {
-            logger.severe("❌ Ошибка закрытия соединения: " + e.getMessage());
+            logger.severe("Ошибка закрытия соединения: " + e.getMessage());
         }
     }
 }

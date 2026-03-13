@@ -1,21 +1,28 @@
 package controller;
 
 import model.User;
-import service.AuthService;
-import view.LoginView;
-import view.RegistrationView;
-import view.ClientView;
-import view.MechanicView;
+import service.interfaces.IAuthService;
+import service.impl.AuthService;
+import view.frames.LoginView;
+import view.frames.RegistrationView;
+import view.frames.ClientView;
+import view.frames.MechanicView;
+import java.util.logging.Logger;
 
 public class AuthController {
-    private AuthService authService;
+    private final IAuthService authService;
     private LoginView loginView;
     private RegistrationView registrationView;
     private ClientView currentClientView;
     private MechanicView currentMechanicView;
+    private static final Logger logger = Logger.getLogger(AuthController.class.getName());
 
     public AuthController() {
         this.authService = new AuthService();
+    }
+
+    public AuthController(IAuthService authService) {
+        this.authService = authService;
     }
 
     public void setLoginView(LoginView loginView) {
@@ -36,14 +43,14 @@ public class AuthController {
         }
     }
 
-    public void handleRegister(String username, String password, String confirmPassword,
-                               String email, String phone, String fullName, String role) {
+    public void handleRegister(String fullName, String password, String confirmPassword,
+                               String email, String phone, String role) {
         if (!password.equals(confirmPassword)) {
             registrationView.showError("Пароли не совпадают");
             return;
         }
 
-        User user = new User(username, password, role, email, phone, fullName);
+        User user = new User(fullName, password, role, email, phone);
         String validationError = authService.validateRegistration(user);
         if (validationError != null) {
             registrationView.showError(validationError);

@@ -1,17 +1,26 @@
-package service;
+package service.impl;
 
 import model.User;
-import dao.UserDAO;
+import dao.interfaces.IUserDAO;
+import dao.impl.UserDAO;
+import service.interfaces.IUserService;
+
+import java.util.List;
 import java.util.logging.Logger;
 
-public class UserService {
+public class UserService implements IUserService {
     private static final Logger logger = Logger.getLogger(UserService.class.getName());
-    private UserDAO userDAO;
+    private final IUserDAO userDAO;
 
     public UserService() {
         this.userDAO = new UserDAO();
     }
 
+    public UserService(IUserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+
+    @Override
     public String validateProfileUpdate(User user) {
         if (user == null || user.getId() == 0) {
             return "Невалидные данные пользователя";
@@ -29,9 +38,10 @@ public class UserService {
             return "ФИО уже используется другим пользователем";
         }
 
-        return null; // Валидация пройдена
+        return null;
     }
 
+    @Override
     public boolean updateUser(User user) {
         String validationError = validateProfileUpdate(user);
         if (validationError != null) {
@@ -41,13 +51,14 @@ public class UserService {
 
         boolean success = userDAO.updateUser(user);
         if (success) {
-            logger.info("Пользователь обновлен: " + user.getUsername());
+            logger.info("Пользователь обновлен: " + user.getFullName());
         } else {
-            logger.severe("Ошибка обновления пользователя: " + user.getUsername());
+            logger.severe("Ошибка обновления пользователя: " + user.getFullName());
         }
         return success;
     }
 
+    @Override
     public User getUserById(int userId) {
         User user = userDAO.getUserById(userId);
         if (user != null) {
@@ -58,7 +69,8 @@ public class UserService {
         return user;
     }
 
-    public java.util.List<User> getClients() {
+    @Override
+    public List<User> getClients() {
         return userDAO.getClients();
     }
 }

@@ -1,27 +1,26 @@
-package view;
+package view.frames;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class RegistrationView extends JFrame {
-    private JTextField usernameField;
+    private JTextField fullNameField;      // Было usernameField, теперь fullNameField
     private JPasswordField passwordField;
     private JPasswordField confirmPasswordField;
     private JTextField emailField;
     private JTextField phoneField;
-    private JTextField fullNameField;
     private JComboBox<String> roleComboBox;
     private JButton registerButton;
     private JButton backButton;
 
     public RegistrationView() {
         initializeUI();
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  // Выход при закрытии
     }
 
     private void initializeUI() {
         setTitle("Автосервис - Регистрация");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(450, 450);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -33,11 +32,12 @@ public class RegistrationView extends JFrame {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        JPanel formPanel = new JPanel(new GridLayout(7, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(7, 2, 10, 20));
 
-        formPanel.add(new JLabel("Имя пользователя:"));
-        usernameField = new JTextField();
-        formPanel.add(usernameField);
+        // ФИО теперь первое поле (было username)
+        formPanel.add(new JLabel("ФИО:"));
+        fullNameField = new JTextField();
+        formPanel.add(fullNameField);
 
         formPanel.add(new JLabel("Пароль:"));
         passwordField = new JPasswordField();
@@ -46,10 +46,6 @@ public class RegistrationView extends JFrame {
         formPanel.add(new JLabel("Подтвердите пароль:"));
         confirmPasswordField = new JPasswordField();
         formPanel.add(confirmPasswordField);
-
-        formPanel.add(new JLabel("ФИО:"));
-        fullNameField = new JTextField();
-        formPanel.add(fullNameField);
 
         formPanel.add(new JLabel("Email:"));
         emailField = new JTextField();
@@ -64,21 +60,15 @@ public class RegistrationView extends JFrame {
         roleComboBox = new JComboBox<>(roles);
         formPanel.add(roleComboBox);
 
-        mainPanel.add(formPanel, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel(new FlowLayout());
         registerButton = new JButton("Зарегистрироваться");
         backButton = new JButton("Назад");
+        formPanel.add(backButton);
+        formPanel.add(registerButton);
 
-        buttonPanel.add(registerButton);
-        buttonPanel.add(backButton);
-
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-
+        mainPanel.add(formPanel, BorderLayout.CENTER);
         add(mainPanel);
     }
 
-    // Методы для установки обработчиков
     public void setRegisterListener(ActionListener listener) {
         registerButton.addActionListener(listener);
     }
@@ -87,16 +77,13 @@ public class RegistrationView extends JFrame {
         backButton.addActionListener(listener);
     }
 
-    // Методы для получения данных
-    public String getUsername() { return usernameField.getText().trim(); }
+    public String getFullName() { return fullNameField.getText().trim(); }
     public String getPassword() { return new String(passwordField.getPassword()); }
     public String getConfirmPassword() { return new String(confirmPasswordField.getPassword()); }
     public String getEmail() { return emailField.getText().trim(); }
     public String getPhone() { return phoneField.getText().trim(); }
-    public String getFullName() { return fullNameField.getText().trim(); }
     public String getRole() { return (String) roleComboBox.getSelectedItem(); }
 
-    // Методы управления view
     public void showView() {
         setVisible(true);
     }
@@ -115,12 +102,11 @@ public class RegistrationView extends JFrame {
     }
 
     public void clearFields() {
-        usernameField.setText("");
+        fullNameField.setText("");
         passwordField.setText("");
         confirmPasswordField.setText("");
         emailField.setText("");
         phoneField.setText("");
-        fullNameField.setText("");
         roleComboBox.setSelectedIndex(0);
     }
 }

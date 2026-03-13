@@ -2,23 +2,26 @@ package controller;
 
 import model.User;
 import model.Car;
-import model.Repair;
 import model.Notification;
-import service.CarService;
-import service.RepairService;
-import service.NotificationService;
-import service.UserService;
-import view.ClientView;
+import service.interfaces.ICarService;
+import service.impl.CarService;
+import service.interfaces.IRepairService;
+import service.impl.RepairService;
+import service.interfaces.INotificationService;
+import service.impl.NotificationService;
+import service.interfaces.IUserService;
+import service.impl.UserService;
+import view.frames.ClientView;
 import java.util.List;
 
 public class ClientController {
-    private User currentUser;
+    private final User currentUser;
     private ClientView view;
-    private CarService carService;
-    private RepairService repairService;
-    private NotificationService notificationService;
-    private UserService userService;
-    private AuthController authController;
+    private final ICarService carService;
+    private final IRepairService repairService;
+    private final INotificationService notificationService;
+    private final IUserService userService;
+    private final AuthController authController;
 
     public ClientController(User user, AuthController authController) {
         this.currentUser = user;
@@ -29,9 +32,20 @@ public class ClientController {
         this.userService = new UserService();
     }
 
+    // Для тестирования
+    public ClientController(User user, AuthController authController,
+                            ICarService carService, IRepairService repairService,
+                            INotificationService notificationService, IUserService userService) {
+        this.currentUser = user;
+        this.authController = authController;
+        this.carService = carService;
+        this.repairService = repairService;
+        this.notificationService = notificationService;
+        this.userService = userService;
+    }
+
     public void setView(ClientView view) {
         this.view = view;
-        // Показываем welcome с актуальным количеством уведомлений
         view.displayWelcome(getUnreadNotificationsCount());
     }
 
@@ -47,14 +61,12 @@ public class ClientController {
 
     public void handleViewNotifications() {
         List<Notification> notifications = notificationService.getUserNotifications(currentUser.getId());
-        // Помечаем уведомления как прочитанные
         for (Notification notification : notifications) {
             if (!notification.isRead()) {
                 notificationService.markNotificationAsRead(notification.getId());
             }
         }
         view.displayNotifications(notifications);
-        // Обновляем welcome сообщение
         view.displayWelcome(getUnreadNotificationsCount());
     }
 
@@ -64,7 +76,7 @@ public class ClientController {
 
         if (success) {
             view.showSuccess("Автомобиль добавлен успешно!");
-            handleViewCars(); // Обновляем список
+            handleViewCars();
         } else {
             view.showError("Ошибка при добавлении автомобиля");
         }
@@ -74,7 +86,7 @@ public class ClientController {
         boolean success = carService.deleteCar(carId);
         if (success) {
             view.showSuccess("Автомобиль удален успешно!");
-            handleViewCars(); // Обновляем список
+            handleViewCars();
         } else {
             view.showError("Ошибка при удалении автомобиля");
         }

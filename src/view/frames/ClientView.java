@@ -1,70 +1,42 @@
-package view;
+package view.frames;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import model.User;
 import model.Car;
 import model.Repair;
 import model.Notification;
-import service.RepairService;
+import service.interfaces.IRepairService;
 import controller.ClientController;
+import view.dialogs.AddCarDialog;
+import view.dialogs.ProfileDialog;
+
 import java.util.List;
 
 public class ClientView extends JFrame {
-    private User currentUser;
+    private final User currentUser;
+    private final ClientController controller; // СОХРАНЯЕМ ССЫЛКУ
     private JTextArea contentArea;
     private JPanel dynamicButtonsPanel;
 
     public ClientView(ClientController controller, User user) {
+        this.controller = controller; // СОХРАНЯЕМ
         this.currentUser = user;
         initializeUI();
-        setupController(controller);
+        setupController();
     }
 
     private void initializeUI() {
         setTitle("Автосервис - Клиент: " + currentUser.getFullName());
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE); // Изменено для обработки закрытия
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setSize(900, 700);
         setLocationRelativeTo(null);
 
-        // Обработчик закрытия окна
+        // Обработчик закрытия окна - ТЕПЕРЬ ИСПОЛЬЗУЕМ СОХРАНЕННЫЙ КОНТРОЛЛЕР
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-                controller.ClientController controller = getControllerFromWindow();
-                if (controller != null) {
-                    controller.handleLogout();
-                }
-            }
-
-            private ClientController getControllerFromWindow() {
-                // Получаем контроллер из кнопок
-                Component[] components = getContentPane().getComponents();
-                for (Component comp : components) {
-                    if (comp instanceof JPanel) {
-                        JPanel panel = (JPanel) comp;
-                        for (Component btn : panel.getComponents()) {
-                            if (btn instanceof JButton) {
-                                ActionListener[] listeners = ((JButton) btn).getActionListeners();
-                                for (ActionListener listener : listeners) {
-                                    // Находим контроллер через рефлексию (упрощенный способ)
-                                    try {
-                                        java.lang.reflect.Field field = listener.getClass().getDeclaredField("this$0");
-                                        field.setAccessible(true);
-                                        Object outerInstance = field.get(listener);
-                                        if (outerInstance instanceof ClientController) {
-                                            return (ClientController) outerInstance;
-                                        }
-                                    } catch (Exception e) {
-                                        // Игнорируем исключения
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                return null;
+                controller.handleLogout(); // ПРЯМОЙ ДОСТУП К КОНТРОЛЛЕРУ
             }
         });
 
@@ -148,13 +120,11 @@ public class ClientView extends JFrame {
 
         add(scrollPane, BorderLayout.CENTER);
 
-        // Панель для динамических кнопок
         dynamicButtonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         add(dynamicButtonsPanel, BorderLayout.SOUTH);
     }
 
-    private void setupController(ClientController controller) {
-        // Получаем JMenuBar и устанавливаем обработчики
+    private void setupController() {
         JMenuBar menuBar = getJMenuBar();
         JMenu systemMenu = menuBar.getMenu(0);
         JMenu carMenu = menuBar.getMenu(1);
@@ -162,32 +132,29 @@ public class ClientView extends JFrame {
         JMenu notificationMenu = menuBar.getMenu(3);
         JMenu helpMenu = menuBar.getMenu(4);
 
-        // Обработчики для меню
-        systemMenu.getItem(0).addActionListener(e -> showProfileDialog(controller));
+        systemMenu.getItem(0).addActionListener(e -> showProfileDialog());
         systemMenu.getItem(2).addActionListener(e -> controller.handleLogout());
         systemMenu.getItem(3).addActionListener(e -> System.exit(0));
-        carMenu.getItem(0).addActionListener(e -> showAddCarDialog(controller));
+        carMenu.getItem(0).addActionListener(e -> showAddCarDialog());
         carMenu.getItem(1).addActionListener(e -> controller.handleViewCars());
         repairMenu.getItem(0).addActionListener(e -> controller.handleViewRepairs());
         notificationMenu.getItem(0).addActionListener(e -> controller.handleViewNotifications());
         helpMenu.getItem(0).addActionListener(e -> controller.handleShowUserGuide());
         helpMenu.getItem(2).addActionListener(e -> controller.handleShowAbout());
 
-        // Обработчики для кнопок
         JPanel buttonPanel = (JPanel) getContentPane().getComponent(0);
-        ((JButton) buttonPanel.getComponent(0)).addActionListener(e -> showProfileDialog(controller));
-        ((JButton) buttonPanel.getComponent(1)).addActionListener(e -> showAddCarDialog(controller));
+        ((JButton) buttonPanel.getComponent(0)).addActionListener(e -> showProfileDialog());
+        ((JButton) buttonPanel.getComponent(1)).addActionListener(e -> showAddCarDialog());
         ((JButton) buttonPanel.getComponent(2)).addActionListener(e -> controller.handleViewCars());
         ((JButton) buttonPanel.getComponent(3)).addActionListener(e -> controller.handleViewRepairs());
         ((JButton) buttonPanel.getComponent(4)).addActionListener(e -> controller.handleViewNotifications());
         ((JButton) buttonPanel.getComponent(5)).addActionListener(e -> controller.handleLogout());
     }
 
-    // Методы отображения данных
     public void displayWelcome(int unreadCount) {
         String notificationInfo = unreadCount > 0 ?
-                String.format("\n📢 У вас %d непрочитанных уведомлений", unreadCount) :
-                "\n📢 Уведомлений нет";
+                String.format("\nУ вас %d непрочитанных уведомлений", unreadCount) :
+                "\nУведомлений нет";
 
         contentArea.setText("Добро пожаловать, " + currentUser.getFullName() + "!\n\n" +
                 "Вы вошли как клиент. Используйте меню или кнопки для работы с приложением.\n\n" +
@@ -216,7 +183,6 @@ public class ClientView extends JFrame {
 
         contentArea.setText(sb.toString());
 
-        // Динамические кнопки удаления
         dynamicButtonsPanel.removeAll();
         for (Car car : cars) {
             JButton deleteButton = new JButton("Удалить " + car.getBrand() + " " + car.getModel());
@@ -239,7 +205,7 @@ public class ClientView extends JFrame {
         dynamicButtonsPanel.repaint();
     }
 
-    public void displayRepairs(List<Car> cars, RepairService repairService) {
+    public void displayRepairs(List<Car> cars, IRepairService repairService) {
         StringBuilder sb = new StringBuilder();
         sb.append("МОИ РЕМОНТЫ\n\n");
 
@@ -249,7 +215,7 @@ public class ClientView extends JFrame {
             for (Car car : cars) {
                 List<Repair> repairs = repairService.getCarRepairs(car.getId());
 
-                sb.append("🚗 Автомобиль: ").append(car.getBrand()).append(" ").append(car.getModel())
+                sb.append("Автомобиль: ").append(car.getBrand()).append(" ").append(car.getModel())
                         .append(" (").append(car.getLicensePlate()).append(")\n");
 
                 if (repairs.isEmpty()) {
@@ -284,7 +250,7 @@ public class ClientView extends JFrame {
             sb.append("У вас нет уведомлений.\n");
         } else {
             for (Notification notification : notifications) {
-                String status = notification.isRead() ? "✅ Прочитано" : "🔴 Новое";
+                String status = notification.isRead() ? "Прочитано" : "Новое";
                 sb.append(status).append(" - ").append(notification.getCreatedAt().toLocalDate())
                         .append("\n").append(notification.getMessage()).append("\n\n");
             }
@@ -296,107 +262,14 @@ public class ClientView extends JFrame {
         dynamicButtonsPanel.repaint();
     }
 
-    // Диалоговые окна
-    private void showProfileDialog(ClientController controller) {
-        JDialog dialog = new JDialog(this, "Личный кабинет", true);
-        dialog.setSize(400, 400);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new GridLayout(7, 2, 10, 10));
-
-        JTextField usernameField = new JTextField(currentUser.getUsername());
-        JTextField emailField = new JTextField(currentUser.getEmail());
-        JTextField phoneField = new JTextField(currentUser.getPhone());
-        JTextField fullNameField = new JTextField(currentUser.getFullName());
-
-        usernameField.setEditable(false);
-
-        dialog.add(new JLabel("Логин:"));
-        dialog.add(usernameField);
-        dialog.add(new JLabel("ФИО:"));
-        dialog.add(fullNameField);
-        dialog.add(new JLabel("Email:"));
-        dialog.add(emailField);
-        dialog.add(new JLabel("Телефон:"));
-        dialog.add(phoneField);
-
-        JButton saveButton = new JButton("Сохранить");
-        JButton cancelButton = new JButton("Отмена");
-
-        saveButton.addActionListener(e -> {
-            String email = emailField.getText().trim();
-            String phone = phoneField.getText().trim();
-            String fullName = fullNameField.getText().trim();
-
-            if (email.isEmpty() || phone.isEmpty() || fullName.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "Заполните все поля", "Ошибка", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            controller.handleUpdateProfile(email, phone, fullName);
-            dialog.dispose();
-        });
-
-        cancelButton.addActionListener(e -> dialog.dispose());
-
-        dialog.add(saveButton);
-        dialog.add(cancelButton);
-        dialog.setVisible(true);
+    private void showProfileDialog() {
+        new ProfileDialog(this, currentUser, controller);
     }
 
-    private void showAddCarDialog(ClientController controller) {
-        JDialog dialog = new JDialog(this, "Добавить автомобиль", true);
-        dialog.setSize(400, 400);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new GridLayout(8, 2, 10, 10));
-
-        JTextField brandField = new JTextField();
-        JTextField modelField = new JTextField();
-        JTextField yearField = new JTextField();
-        JTextField vinField = new JTextField();
-        JTextField licensePlateField = new JTextField();
-
-        dialog.add(new JLabel("Марка:"));
-        dialog.add(brandField);
-        dialog.add(new JLabel("Модель:"));
-        dialog.add(modelField);
-        dialog.add(new JLabel("Год:"));
-        dialog.add(yearField);
-        dialog.add(new JLabel("VIN:"));
-        dialog.add(vinField);
-        dialog.add(new JLabel("Гос. номер:"));
-        dialog.add(licensePlateField);
-
-        JButton addButton = new JButton("Добавить");
-        JButton cancelButton = new JButton("Отмена");
-
-        addButton.addActionListener(e -> {
-            try {
-                String brand = brandField.getText().trim();
-                String model = modelField.getText().trim();
-                int year = Integer.parseInt(yearField.getText().trim());
-                String vin = vinField.getText().trim();
-                String licensePlate = licensePlateField.getText().trim();
-
-                if (brand.isEmpty() || model.isEmpty() || vin.isEmpty() || licensePlate.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog, "Заполните все поля", "Ошибка", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                controller.handleAddCar(brand, model, year, vin, licensePlate);
-                dialog.dispose();
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dialog, "Проверьте правильность числовых полей", "Ошибка", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        cancelButton.addActionListener(e -> dialog.dispose());
-
-        dialog.add(addButton);
-        dialog.add(cancelButton);
-        dialog.setVisible(true);
+    private void showAddCarDialog() {
+        new AddCarDialog(this, controller);
     }
 
-    // Методы управления view
     public void showView() {
         setVisible(true);
     }
@@ -418,8 +291,7 @@ public class ClientView extends JFrame {
     }
 
     public void updateProfileInfo(User user) {
-        this.currentUser = user;
-        setTitle("Автосервис - Клиент: " + currentUser.getFullName());
+        setTitle("Автосервис - Клиент: " + user.getFullName());
     }
 
     public void displayUserGuide(String guide) {

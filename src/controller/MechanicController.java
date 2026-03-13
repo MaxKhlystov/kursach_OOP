@@ -3,21 +3,25 @@ package controller;
 import model.User;
 import model.Car;
 import model.Repair;
-import service.CarService;
-import service.RepairService;
-import service.UserService;
-import service.NotificationService;
-import view.MechanicView;
+import service.interfaces.ICarService;
+import service.impl.CarService;
+import service.interfaces.IRepairService;
+import service.impl.RepairService;
+import service.interfaces.IUserService;
+import service.impl.UserService;
+import service.interfaces.INotificationService;
+import service.impl.NotificationService;
+import view.frames.MechanicView;
 import java.util.List;
 
 public class MechanicController {
-    private User currentUser;
+    private final User currentUser;
     private MechanicView view;
-    private CarService carService;
-    private RepairService repairService;
-    private UserService userService;
-    private NotificationService notificationService;
-    private AuthController authController;
+    private final ICarService carService;
+    private final IRepairService repairService;
+    private final IUserService userService;
+    private final INotificationService notificationService;
+    private final AuthController authController;
 
     public MechanicController(User user, AuthController authController) {
         this.currentUser = user;
@@ -26,6 +30,18 @@ public class MechanicController {
         this.repairService = new RepairService();
         this.userService = new UserService();
         this.notificationService = new NotificationService();
+    }
+
+    // Для тестирования
+    public MechanicController(User user, AuthController authController,
+                              ICarService carService, IRepairService repairService,
+                              IUserService userService, INotificationService notificationService) {
+        this.currentUser = user;
+        this.authController = authController;
+        this.carService = carService;
+        this.repairService = repairService;
+        this.userService = userService;
+        this.notificationService = notificationService;
     }
 
     public void setView(MechanicView view) {
@@ -48,15 +64,8 @@ public class MechanicController {
         boolean success = repairService.addRepair(repair);
 
         if (success) {
-            // Добавляем уведомление для клиента
-            Car car = carService.getCarById(carId);
-            if (car != null) {
-                String carInfo = car.getBrand() + " " + car.getModel() + " (" + car.getLicensePlate() + ")";
-                repairService.addRepairNotification(car.getOwnerId(), carInfo, "DIAGNOSTICS");
-            }
-
             view.showSuccess("Ремонт добавлен успешно!");
-            handleViewRepairs(); // Обновляем список
+            handleViewRepairs();
         } else {
             view.showError("Ошибка при добавлении ремонта");
         }
@@ -71,18 +80,8 @@ public class MechanicController {
 
         boolean success = repairService.updateRepairStatus(repairId, newStatus);
         if (success) {
-            // Добавляем уведомление для клиента
-            Repair repair = repairService.getRepairById(repairId);
-            if (repair != null) {
-                Car car = carService.getCarById(repair.getCarId());
-                if (car != null) {
-                    String carInfo = car.getBrand() + " " + car.getModel() + " (" + car.getLicensePlate() + ")";
-                    repairService.addRepairNotification(car.getOwnerId(), carInfo, newStatus);
-                }
-            }
-
             view.showSuccess("Статус ремонта успешно изменен!");
-            handleViewRepairs(); // Обновляем список
+            handleViewRepairs();
         } else {
             view.showError("Ошибка при изменении статуса ремонта");
         }

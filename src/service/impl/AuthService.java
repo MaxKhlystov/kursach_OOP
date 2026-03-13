@@ -1,40 +1,52 @@
-package service;
+package service.impl;
 
 import model.User;
-import dao.UserDAO;
+import dao.interfaces.IUserDAO;
+import dao.impl.UserDAO;
+import service.interfaces.IAuthService;
+
 import java.util.logging.Logger;
 
-public class AuthService {
+public class AuthService implements IAuthService {
     private static final Logger logger = Logger.getLogger(AuthService.class.getName());
-    private UserDAO userDAO;
+    private final IUserDAO userDAO;
 
     public AuthService() {
         this.userDAO = new UserDAO();
     }
 
-    public User login(String username, String password) {
-        if (username == null || username.trim().isEmpty() ||
+    public AuthService(IUserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
+
+    @Override
+    public User login(String emailOrPhone, String password) {
+        if (emailOrPhone == null || emailOrPhone.trim().isEmpty() ||
                 password == null || password.trim().isEmpty()) {
             logger.warning("Попытка входа с пустыми данными");
             return null;
         }
 
-        User user = userDAO.authenticate(username, password);
+        User user = userDAO.authenticate(emailOrPhone, password);
         if (user != null) {
-            logger.info("Успешный вход: " + username);
+            logger.info("Успешный вход: " + emailOrPhone);
         } else {
-            logger.warning("Неудачный вход: " + username);
+            logger.warning("Неудачный вход: " + emailOrPhone);
         }
         return user;
     }
 
+    @Override
     public String validateRegistration(User user) {
-        if (user == null || user.getUsername() == null || user.getPassword() == null) {
+        if (user == null) {
             return "Невалидные данные пользователя";
         }
+        if (user.getPassword() == null){
+            return "Пароль не заполнен";
+        }
 
-        if (userDAO.usernameExists(user.getUsername())) {
-            return "Имя пользователя уже занято";
+        if (user.getFullName() == null){
+            return "ФИО не заполнено";
         }
 
         if (userDAO.emailExists(user.getEmail())) {
@@ -49,13 +61,14 @@ public class AuthService {
             return "ФИО уже используется";
         }
 
-        if (user.getPassword().length() < 6) {
-            return "Пароль должен содержать минимум 6 символов";
+        if (user.getPassword().length() < 3) {
+            return "Пароль должен содержать минимум 3 символа";
         }
 
-        return null; // Валидация пройдена
+        return null;
     }
 
+    @Override
     public boolean register(User user) {
         String validationError = validateRegistration(user);
         if (validationError != null) {
@@ -65,9 +78,9 @@ public class AuthService {
 
         boolean success = userDAO.createUser(user);
         if (success) {
-            logger.info("Пользователь зарегистрирован: " + user.getUsername());
+            logger.info("Пользователь зарегистрирован: " + user.getFullName());
         } else {
-            logger.severe("Ошибка регистрации: " + user.getUsername());
+            logger.severe("Ошибка регистрации: " + user.getFullName());
         }
         return success;
     }

@@ -1,5 +1,6 @@
-package dao;
+package dao.impl;
 
+import dao.interfaces.ICarDAO;
 import model.Car;
 import model.DatabaseConnection;
 import java.sql.*;
@@ -7,14 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class CarDAO {
+public class CarDAO implements ICarDAO {
     private static final Logger logger = Logger.getLogger(CarDAO.class.getName());
 
+    @Override
     public boolean addCar(Car car) {
         String sql = "INSERT INTO cars (brand, model, year, vin, license_plate, owner_id, registration_date) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setString(1, car.getBrand());
             pstmt.setString(2, car.getModel());
@@ -25,6 +27,15 @@ public class CarDAO {
             pstmt.setString(7, car.getRegistrationDate().toString());
 
             int result = pstmt.executeUpdate();
+
+            if (result > 0) {
+                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        car.setId(rs.getInt(1));
+                    }
+                }
+            }
+
             logger.info("Автомобиль добавлен: " + car.getBrand() + " " + car.getModel());
             return result > 0;
 
@@ -34,6 +45,7 @@ public class CarDAO {
         }
     }
 
+    @Override
     public boolean deleteCar(int carId) {
         String sql = "DELETE FROM cars WHERE id = ?";
 
@@ -41,7 +53,6 @@ public class CarDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, carId);
-
             int result = pstmt.executeUpdate();
             logger.info("Автомобиль удален ID: " + carId);
             return result > 0;
@@ -52,9 +63,10 @@ public class CarDAO {
         }
     }
 
+    @Override
     public List<Car> getCarsByOwner(int ownerId) {
         List<Car> cars = new ArrayList<>();
-        String sql = "SELECT * FROM cars WHERE owner_id = ?";
+        String sql = "SELECT * FROM cars WHERE owner_id = ? ORDER BY brand, model";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -63,16 +75,7 @@ public class CarDAO {
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                Car car = new Car();
-                car.setId(rs.getInt("id"));
-                car.setBrand(rs.getString("brand"));
-                car.setModel(rs.getString("model"));
-                car.setYear(rs.getInt("year"));
-                car.setVin(rs.getString("vin"));
-                car.setLicensePlate(rs.getString("license_plate"));
-                car.setOwnerId(rs.getInt("owner_id"));
-                car.setRegistrationDate(java.time.LocalDate.parse(rs.getString("registration_date")));
-                cars.add(car);
+                cars.add(extractCarFromResultSet(rs));
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения автомобилей: " + e.getMessage());
@@ -80,25 +83,17 @@ public class CarDAO {
         return cars;
     }
 
+    @Override
     public List<Car> getAllCars() {
         List<Car> cars = new ArrayList<>();
-        String sql = "SELECT * FROM cars";
+        String sql = "SELECT * FROM cars ORDER BY brand, model";
 
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Car car = new Car();
-                car.setId(rs.getInt("id"));
-                car.setBrand(rs.getString("brand"));
-                car.setModel(rs.getString("model"));
-                car.setYear(rs.getInt("year"));
-                car.setVin(rs.getString("vin"));
-                car.setLicensePlate(rs.getString("license_plate"));
-                car.setOwnerId(rs.getInt("owner_id"));
-                car.setRegistrationDate(java.time.LocalDate.parse(rs.getString("registration_date")));
-                cars.add(car);
+                cars.add(extractCarFromResultSet(rs));
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения всех автомобилей: " + e.getMessage());
@@ -106,6 +101,7 @@ public class CarDAO {
         return cars;
     }
 
+    @Override
     public Car getCarById(int carId) {
         String sql = "SELECT * FROM cars WHERE id = ?";
 
@@ -116,20 +112,24 @@ public class CarDAO {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                Car car = new Car();
-                car.setId(rs.getInt("id"));
-                car.setBrand(rs.getString("brand"));
-                car.setModel(rs.getString("model"));
-                car.setYear(rs.getInt("year"));
-                car.setVin(rs.getString("vin"));
-                car.setLicensePlate(rs.getString("license_plate"));
-                car.setOwnerId(rs.getInt("owner_id"));
-                car.setRegistrationDate(java.time.LocalDate.parse(rs.getString("registration_date")));
-                return car;
+                return extractCarFromResultSet(rs);
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения автомобиля: " + e.getMessage());
         }
         return null;
+    }
+
+    private Car extractCarFromResultSet(ResultSet rs) throws SQLException {
+        Car car = new Car();
+        car.setId(rs.getInt("id"));
+        car.setBrand(rs.getString("brand"));
+        car.setModel(rs.getString("model"));
+        car.setYear(rs.getInt("year"));
+        car.setVin(rs.getString("vin"));
+        car.setLicensePlate(rs.getString("license_plate"));
+        car.setOwnerId(rs.getInt("owner_id"));
+        car.setRegistrationDate(java.time.LocalDate.parse(rs.getString("registration_date")));
+        return car;
     }
 }
