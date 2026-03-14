@@ -7,7 +7,7 @@ public class User {
     private String role;
     private String email;
     private String phone;
-    private int linkedUserId; // для связи клиент-механик
+    private int linkedUserId;
 
     public User() {}
 

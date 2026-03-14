@@ -37,7 +37,6 @@ public class CarDAO implements ICarDAO {
             System.out.println("executeUpdate result: " + result);
 
             if (result > 0) {
-                // Получаем ID последней вставленной записи
                 String idSql = "SELECT last_insert_rowid() as id";
                 try (Statement stmt = conn.createStatement();
                      ResultSet rs = stmt.executeQuery(idSql)) {

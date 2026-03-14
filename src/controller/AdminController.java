@@ -5,7 +5,6 @@ import model.Car;
 import model.Repair;
 import model.CarBrand;
 import model.CarModel;
-import model.Notification;
 import service.interfaces.*;
 import service.impl.*;
 import view.frames.AdminView;
@@ -22,7 +21,6 @@ public class AdminController {
     private final IRepairService repairService;
     private final ICarBrandService brandService;
     private final ICarModelService modelService;
-    private final INotificationService notificationService;
     private final AuthController authController;
 
     private static final Logger logger = Logger.getLogger(AdminController.class.getName());
@@ -35,26 +33,19 @@ public class AdminController {
         this.repairService = new RepairService();
         this.brandService = new CarBrandService();
         this.modelService = new CarModelService();
-        this.notificationService = new NotificationService();
     }
 
     public void setView(AdminView view) {
         this.view = view;
     }
 
-    // ===== User operations =====
     public List<User> getAllUsers() {
         List<User> users = userService.getAllUsers();
         logger.info("Админ " + currentUser.getFullName() + " запросил список пользователей. Найдено: " + users.size());
         return users;
     }
 
-    public User getUserById(int id) {
-        return userService.getUserById(id);
-    }
-
     public boolean deleteUser(int userId) {
-        // Не даем удалить самого себя
         if (userId == currentUser.getId()) {
             view.showError("Нельзя удалить собственную учетную запись");
             return false;
@@ -62,7 +53,7 @@ public class AdminController {
 
         int confirm = JOptionPane.showConfirmDialog(null,
                 "Вы уверены, что хотите удалить пользователя ID " + userId + "?\n" +
-                        "Это также удалит все связанные автомобили, ремонты и уведомления!",
+                        "Это также удалит все связанные автомобили и ремонты!",
                 "Подтверждение удаления",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
@@ -77,6 +68,12 @@ public class AdminController {
             return success;
         }
         return false;
+    }
+
+    public List<Car> getAllCars() {
+        List<Car> cars = carService.getAllCars();
+        logger.info("Админ " + currentUser.getFullName() + " запросил список автомобилей. Найдено: " + cars.size());
+        return cars;
     }
 
     public boolean deleteCar(int carId) {
@@ -99,6 +96,12 @@ public class AdminController {
         return false;
     }
 
+    public List<Repair> getAllRepairs() {
+        List<Repair> repairs = repairService.getAllRepairs();
+        logger.info("Админ " + currentUser.getFullName() + " запросил список ремонтов. Найдено: " + repairs.size());
+        return repairs;
+    }
+
     public boolean deleteRepair(int repairId) {
         int confirm = JOptionPane.showConfirmDialog(null,
                 "Вы уверены, что хотите удалить ремонт ID " + repairId + "?",
@@ -116,6 +119,12 @@ public class AdminController {
             return success;
         }
         return false;
+    }
+
+    public List<CarBrand> getAllBrands() {
+        List<CarBrand> brands = brandService.getAllBrands();
+        logger.info("Админ " + currentUser.getFullName() + " запросил список марок. Найдено: " + brands.size());
+        return brands;
     }
 
     public boolean deleteBrand(int id) {
@@ -138,6 +147,12 @@ public class AdminController {
         return false;
     }
 
+    public List<CarModel> getAllModels() {
+        List<CarModel> models = modelService.getAllModels();
+        logger.info("Админ " + currentUser.getFullName() + " запросил список моделей. Найдено: " + models.size());
+        return models;
+    }
+
     public boolean deleteModel(int id) {
         int confirm = JOptionPane.showConfirmDialog(null,
                 "Вы уверены, что хотите удалить модель ID " + id + "?",
@@ -155,55 +170,6 @@ public class AdminController {
             return success;
         }
         return false;
-    }
-
-    public boolean deleteNotification(int notificationId) {
-        int confirm = JOptionPane.showConfirmDialog(null,
-                "Вы уверены, что хотите удалить уведомление ID " + notificationId + "?",
-                "Подтверждение удаления",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            boolean success = notificationService.deleteNotification(notificationId);
-            if (success) {
-                view.showSuccess("Уведомление успешно удалено");
-            } else {
-                view.showError("Ошибка при удалении уведомления");
-            }
-            return success;
-        }
-        return false;
-    }
-
-    public List<Car> getAllCars() {
-        List<Car> cars = carService.getAllCars();
-        logger.info("Админ " + currentUser.getFullName() + " запросил список автомобилей. Найдено: " + cars.size());
-        return cars;
-    }
-
-    public List<Repair> getAllRepairs() {
-        List<Repair> repairs = repairService.getAllRepairs();
-        logger.info("Админ " + currentUser.getFullName() + " запросил список ремонтов. Найдено: " + repairs.size());
-        return repairs;
-    }
-
-    public List<CarBrand> getAllBrands() {
-        List<CarBrand> brands = brandService.getAllBrands();
-        logger.info("Админ " + currentUser.getFullName() + " запросил список марок. Найдено: " + brands.size());
-        return brands;
-    }
-
-    public List<CarModel> getAllModels() {
-        List<CarModel> models = modelService.getAllModels();
-        logger.info("Админ " + currentUser.getFullName() + " запросил список моделей. Найдено: " + models.size());
-        return models;
-    }
-
-    public List<Notification> getAllNotifications() {
-        List<Notification> notifications = notificationService.getAllNotifications(); // нужно добавить этот метод
-        logger.info("Админ " + currentUser.getFullName() + " запросил список уведомлений. Найдено: " + notifications.size());
-        return notifications;
     }
 
     public void handleLogout() {

@@ -16,10 +16,6 @@ public class CarService implements ICarService {
         this.carDAO = new CarDAO();
     }
 
-    public CarService(ICarDAO carDAO) {
-        this.carDAO = carDAO;
-    }
-
     @Override
     public boolean addCar(Car car) {
         if (car == null || car.getBrand() == null || car.getModel() == null) {

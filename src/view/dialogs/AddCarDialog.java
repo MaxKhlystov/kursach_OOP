@@ -8,12 +8,12 @@ import service.interfaces.ICarBrandService;
 import service.interfaces.ICarModelService;
 import service.impl.CarBrandService;
 import service.impl.CarModelService;
+import utils.InputValidator;
 
 public class AddCarDialog extends JDialog {
     private final ClientController controller;
     private final ICarBrandService brandService;
     private final ICarModelService modelService;
-
     private JComboBox<String> brandComboBox;
     private JComboBox<String> modelComboBox;
     private JTextField yearField;
@@ -41,7 +41,6 @@ public class AddCarDialog extends JDialog {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Заголовок
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -49,7 +48,6 @@ public class AddCarDialog extends JDialog {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         mainPanel.add(titleLabel, gbc);
 
-        // Марка
         gbc.gridy = 1;
         gbc.gridwidth = 1;
         gbc.weightx = 0.3;
@@ -62,7 +60,6 @@ public class AddCarDialog extends JDialog {
         brandComboBox.addActionListener(e -> onBrandSelected());
         mainPanel.add(brandComboBox, gbc);
 
-        // Модель
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.3;
@@ -74,7 +71,6 @@ public class AddCarDialog extends JDialog {
         modelComboBox.setEditable(true);
         mainPanel.add(modelComboBox, gbc);
 
-        // Год
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.weightx = 0.3;
@@ -85,7 +81,6 @@ public class AddCarDialog extends JDialog {
         yearField = new JTextField(10);
         mainPanel.add(yearField, gbc);
 
-        // VIN
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.weightx = 0.3;
@@ -96,7 +91,6 @@ public class AddCarDialog extends JDialog {
         vinField = new JTextField(15);
         mainPanel.add(vinField, gbc);
 
-        // Гос. номер
         gbc.gridx = 0;
         gbc.gridy = 5;
         gbc.weightx = 0.3;
@@ -107,7 +101,6 @@ public class AddCarDialog extends JDialog {
         licensePlateField = new JTextField(10);
         mainPanel.add(licensePlateField, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton addButton = new JButton("Добавить");
         JButton cancelButton = new JButton("Отмена");
@@ -130,7 +123,7 @@ public class AddCarDialog extends JDialog {
     private void loadBrands() {
         List<String> brands = brandService.getAllBrandNames();
         DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-        model.addElement(""); // Пустой элемент для возможности ввода
+        model.addElement("");
         for (String brand : brands) {
             model.addElement(brand);
         }
@@ -142,7 +135,6 @@ public class AddCarDialog extends JDialog {
         if (selectedBrand != null && !selectedBrand.trim().isEmpty()) {
             loadModels(selectedBrand.trim());
         } else {
-            // Очищаем модели
             DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             model.addElement("");
             modelComboBox.setModel(model);
@@ -152,7 +144,7 @@ public class AddCarDialog extends JDialog {
     private void loadModels(String brandName) {
         List<String> models = modelService.getModelNamesByBrand(brandName);
         DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-        model.addElement(""); // Пустой элемент для возможности ввода
+        model.addElement("");
         for (String m : models) {
             model.addElement(m);
         }
@@ -194,6 +186,20 @@ public class AddCarDialog extends JDialog {
                 return;
             }
 
+            if (!InputValidator.isValidVin(vin)) {
+                JOptionPane.showMessageDialog(this,
+                        "VIN-номер должен содержать 17 символов (буквы A-Z и цифры, без I, O, Q)",
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!InputValidator.isValidLicensePlate(licensePlate)) {
+                JOptionPane.showMessageDialog(this,
+                        "Неверный формат гос. номера. Пример: А123ВС777",
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             int year;
             try {
                 year = Integer.parseInt(yearStr);
@@ -209,14 +215,6 @@ public class AddCarDialog extends JDialog {
                 return;
             }
 
-            // Проверка VIN (17 символов)
-            if (vin.length() != 17) {
-                JOptionPane.showMessageDialog(this, "VIN-номер должен содержать 17 символов",
-                        "Ошибка", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Сохраняем марку и модель в БД, если их там нет
             brandService.addBrand(brand, controller.getCurrentUser().getId());
             modelService.addModel(brand, model, controller.getCurrentUser().getId());
 
@@ -225,7 +223,6 @@ public class AddCarDialog extends JDialog {
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Ошибка: " + e.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
         }
     }
 }

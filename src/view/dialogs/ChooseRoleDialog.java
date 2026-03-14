@@ -29,7 +29,6 @@ public class ChooseRoleDialog extends JDialog {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         mainPanel.add(titleLabel, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 10, 10));
 
         JButton clientButton = new JButton("Клиент");

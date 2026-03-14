@@ -3,6 +3,7 @@ package view.frames;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import utils.InputValidator;
 
 public class RegistrationView extends JFrame {
     private JTextField fullNameField;
@@ -12,9 +13,9 @@ public class RegistrationView extends JFrame {
     private JTextField phoneField;
     private JButton registerButton;
     private JButton backButton;
-    private JButton haveAccountButton; // Новая кнопка
+    private JButton haveAccountButton;
 
-    private String role; // роль будет устанавливаться извне
+    private String role;
 
     public RegistrationView() {
         initializeUI();
@@ -43,7 +44,6 @@ public class RegistrationView extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // ФИО
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
@@ -55,7 +55,6 @@ public class RegistrationView extends JFrame {
         fullNameField = new JTextField(15);
         formPanel.add(fullNameField, gbc);
 
-        // Пароль
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0.3;
@@ -66,7 +65,6 @@ public class RegistrationView extends JFrame {
         passwordField = new JPasswordField(15);
         formPanel.add(passwordField, gbc);
 
-        // Подтверждение пароля
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.3;
@@ -77,7 +75,6 @@ public class RegistrationView extends JFrame {
         confirmPasswordField = new JPasswordField(15);
         formPanel.add(confirmPasswordField, gbc);
 
-        // Телефон
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.weightx = 0.3;
@@ -88,7 +85,6 @@ public class RegistrationView extends JFrame {
         phoneField = new JTextField(15);
         formPanel.add(phoneField, gbc);
 
-        // Email
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.weightx = 0.3;
@@ -99,7 +95,6 @@ public class RegistrationView extends JFrame {
         emailField = new JTextField(15);
         formPanel.add(emailField, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 10, 10));
 
         JPanel mainButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
@@ -142,12 +137,46 @@ public class RegistrationView extends JFrame {
         haveAccountButton.addActionListener(listener);
     }
 
-    public String getFullName() { return fullNameField.getText().trim(); }
-    public String getPassword() { return new String(passwordField.getPassword()); }
-    public String getConfirmPassword() { return new String(confirmPasswordField.getPassword()); }
-    public String getEmail() { return emailField.getText().trim(); }
-    public String getPhone() { return phoneField.getText().trim(); }
-    public String getRole() { return role; }
+    public String getFullName() {
+        return fullNameField.getText().trim();
+    }
+
+    public String getPassword() {
+        return new String(passwordField.getPassword());
+    }
+
+    public String getConfirmPassword() {
+        return new String(confirmPasswordField.getPassword());
+    }
+
+    public String getEmail() {
+        return emailField.getText().trim().toLowerCase();
+    }
+
+    public String getPhone() {
+        return phoneField.getText().trim();
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public String validateInputs() {
+        String fullName = getFullName();
+        String phone = getPhone();
+        String email = getEmail();
+
+        String nameError = InputValidator.validateName(fullName);
+        if (nameError != null) return nameError;
+
+        String phoneError = InputValidator.validatePhone(phone);
+        if (phoneError != null) return phoneError;
+
+        String emailError = InputValidator.validateEmail(email);
+        if (emailError != null) return emailError;
+
+        return null;
+    }
 
     public void showView() {
         setVisible(true);

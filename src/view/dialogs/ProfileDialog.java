@@ -5,10 +5,11 @@ import java.awt.*;
 import model.User;
 import controller.ClientController;
 import controller.MechanicController;
+import utils.InputValidator;
 
 public class ProfileDialog extends JDialog {
     private final User user;
-    private final Object controller; // ClientController или MechanicController
+    private final Object controller;
     private JTextField fullNameField;
     private JTextField emailField;
     private JTextField phoneField;
@@ -32,7 +33,6 @@ public class ProfileDialog extends JDialog {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Заголовок
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -40,7 +40,6 @@ public class ProfileDialog extends JDialog {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         mainPanel.add(titleLabel, gbc);
 
-        // ФИО
         gbc.gridy = 1;
         gbc.gridwidth = 1;
         gbc.weightx = 0.3;
@@ -51,7 +50,6 @@ public class ProfileDialog extends JDialog {
         fullNameField = new JTextField(user.getFullName(), 15);
         mainPanel.add(fullNameField, gbc);
 
-        // Телефон
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.3;
@@ -62,7 +60,6 @@ public class ProfileDialog extends JDialog {
         phoneField = new JTextField(user.getPhone(), 15);
         mainPanel.add(phoneField, gbc);
 
-        // Email
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.weightx = 0.3;
@@ -73,7 +70,6 @@ public class ProfileDialog extends JDialog {
         emailField = new JTextField(user.getEmail(), 15);
         mainPanel.add(emailField, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton saveButton = new JButton("Сохранить");
         JButton changePasswordButton = new JButton("Сменить пароль");
@@ -90,7 +86,6 @@ public class ProfileDialog extends JDialog {
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
-        gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(buttonPanel, gbc);
 
@@ -101,10 +96,23 @@ public class ProfileDialog extends JDialog {
     private void onSave() {
         String fullName = fullNameField.getText().trim();
         String phone = phoneField.getText().trim();
-        String email = emailField.getText().trim();
+        String email = emailField.getText().trim().toLowerCase();
 
-        if (fullName.isEmpty() || phone.isEmpty() || email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Заполните все поля", "Ошибка", JOptionPane.ERROR_MESSAGE);
+        String nameError = InputValidator.validateName(fullName);
+        if (nameError != null) {
+            JOptionPane.showMessageDialog(this, nameError, "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String phoneError = InputValidator.validatePhone(phone);
+        if (phoneError != null) {
+            JOptionPane.showMessageDialog(this, phoneError, "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String emailError = InputValidator.validateEmail(email);
+        if (emailError != null) {
+            JOptionPane.showMessageDialog(this, emailError, "Ошибка", JOptionPane.ERROR_MESSAGE);
             return;
         }
 

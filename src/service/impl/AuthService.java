@@ -15,10 +15,6 @@ public class AuthService implements IAuthService {
         this.userDAO = new UserDAO();
     }
 
-    public AuthService(IUserDAO userDAO) {
-        this.userDAO = userDAO;
-    }
-
     @Override
     public User login(String emailOrPhone, String password) {
         if (emailOrPhone == null || emailOrPhone.trim().isEmpty() ||

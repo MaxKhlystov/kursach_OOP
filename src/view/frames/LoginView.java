@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
 public class LoginView extends JFrame {
     private JTextField emailPhoneField;
     private JPasswordField passwordField;
-    private JComboBox<String> roleComboBox; // Добавляем комбобокс
+    private JComboBox<String> roleComboBox;
     private JButton loginButton;
     private JButton registerButton;
     private JButton exitButton;
@@ -35,7 +35,6 @@ public class LoginView extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Email/телефон
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
@@ -47,7 +46,6 @@ public class LoginView extends JFrame {
         emailPhoneField = new JTextField(15);
         formPanel.add(emailPhoneField, gbc);
 
-        // Пароль
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0.3;
@@ -58,7 +56,6 @@ public class LoginView extends JFrame {
         passwordField = new JPasswordField(15);
         formPanel.add(passwordField, gbc);
 
-        // Роль
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.3;
@@ -70,7 +67,6 @@ public class LoginView extends JFrame {
         roleComboBox = new JComboBox<>(roles);
         formPanel.add(roleComboBox, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 10, 10));
         loginButton = new JButton("Войти");
         registerButton = new JButton("Регистрация");

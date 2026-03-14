@@ -47,7 +47,6 @@ public class LinkAccountDialog extends JDialog {
         searchField = new JTextField(15);
         mainPanel.add(searchField, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton searchButton = new JButton("Найти");
         JButton cancelButton = new JButton("Отмена");

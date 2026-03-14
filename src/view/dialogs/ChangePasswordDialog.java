@@ -32,7 +32,6 @@ public class ChangePasswordDialog extends JDialog {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Заголовок
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -40,7 +39,6 @@ public class ChangePasswordDialog extends JDialog {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         mainPanel.add(titleLabel, gbc);
 
-        // Текущий пароль
         gbc.gridy = 1;
         gbc.gridwidth = 1;
         gbc.weightx = 0.3;
@@ -51,7 +49,6 @@ public class ChangePasswordDialog extends JDialog {
         oldPasswordField = new JPasswordField(15);
         mainPanel.add(oldPasswordField, gbc);
 
-        // Новый пароль
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.3;
@@ -62,7 +59,6 @@ public class ChangePasswordDialog extends JDialog {
         newPasswordField = new JPasswordField(15);
         mainPanel.add(newPasswordField, gbc);
 
-        // Подтверждение
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.weightx = 0.3;
@@ -73,7 +69,6 @@ public class ChangePasswordDialog extends JDialog {
         confirmPasswordField = new JPasswordField(15);
         mainPanel.add(confirmPasswordField, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton saveButton = new JButton("Сохранить");
         JButton cancelButton = new JButton("Отмена");
@@ -98,31 +93,26 @@ public class ChangePasswordDialog extends JDialog {
         String newPassword = new String(newPasswordField.getPassword());
         String confirmPassword = new String(confirmPasswordField.getPassword());
 
-        // Проверка заполнения
         if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Заполните все поля", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Проверка старого пароля
         if (!oldPassword.equals(user.getPassword())) {
             JOptionPane.showMessageDialog(this, "Неверный текущий пароль", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Проверка, что новый пароль не совпадает со старым
         if (newPassword.equals(oldPassword)) {
             JOptionPane.showMessageDialog(this, "Новый пароль должен отличаться от текущего", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Проверка совпадения нового пароля и подтверждения
         if (!newPassword.equals(confirmPassword)) {
             JOptionPane.showMessageDialog(this, "Новый пароль и подтверждение не совпадают", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Проверка минимальной длины
         if (newPassword.length() < 3) {
             JOptionPane.showMessageDialog(this, "Пароль должен содержать минимум 3 символа", "Ошибка", JOptionPane.ERROR_MESSAGE);
             return;

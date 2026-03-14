@@ -1,12 +1,8 @@
 package service.impl;
 
 import model.Repair;
-import model.Car;
 import dao.interfaces.IRepairDAO;
 import dao.impl.RepairDAO;
-import dao.interfaces.ICarDAO;
-import dao.impl.CarDAO;
-import service.interfaces.INotificationService;
 import service.interfaces.IRepairService;
 
 import java.util.List;
@@ -15,19 +11,9 @@ import java.util.logging.Logger;
 public class RepairService implements IRepairService {
     private static final Logger logger = Logger.getLogger(RepairService.class.getName());
     private final IRepairDAO repairDAO;
-    private final ICarDAO carDAO;
-    private final INotificationService notificationService;
 
     public RepairService() {
         this.repairDAO = new RepairDAO();
-        this.carDAO = new CarDAO();
-        this.notificationService = new NotificationService();
-    }
-
-    public RepairService(IRepairDAO repairDAO, ICarDAO carDAO, INotificationService notificationService) {
-        this.repairDAO = repairDAO;
-        this.carDAO = carDAO;
-        this.notificationService = notificationService;
     }
 
     @Override
@@ -40,7 +26,6 @@ public class RepairService implements IRepairService {
         boolean success = repairDAO.addRepair(repair);
         if (success) {
             logger.info("Ремонт добавлен для автомобиля ID: " + repair.getCarId());
-            sendStatusChangeNotification(repair, "DIAGNOSTICS");
         }
         return success;
     }
@@ -64,11 +49,6 @@ public class RepairService implements IRepairService {
         boolean success = repairDAO.updateRepairStatus(repairId, status);
         if (success) {
             logger.info("Статус ремонта обновлен: " + repairId + " -> " + status);
-
-            Repair repair = repairDAO.getRepairById(repairId);
-            if (repair != null) {
-                sendStatusChangeNotification(repair, status);
-            }
         }
         return success;
     }
@@ -90,11 +70,6 @@ public class RepairService implements IRepairService {
         boolean success = repairDAO.completeRepair(repairId);
         if (success) {
             logger.info("Ремонт завершен: " + repairId);
-
-            Repair repair = repairDAO.getRepairById(repairId);
-            if (repair != null) {
-                sendStatusChangeNotification(repair, "COMPLETED");
-            }
         }
         return success;
     }
@@ -108,38 +83,6 @@ public class RepairService implements IRepairService {
         return repair;
     }
 
-    private String getNextStatus(String currentStatus) {
-        switch (currentStatus) {
-            case "DIAGNOSTICS": return "IN_REPAIR";
-            case "IN_REPAIR": return "COMPLETED";
-            default: return null;
-        }
-    }
-
-    private void sendStatusChangeNotification(Repair repair, String status) {
-        try {
-            Car car = carDAO.getCarById(repair.getCarId());
-            if (car != null) {
-                String carInfo = car.getBrand() + " " + car.getModel() + " (" + car.getLicensePlate() + ")";
-                String message = formatStatusMessage(carInfo, status);
-
-                logger.info("Отправка уведомления клиенту " + car.getOwnerId() +
-                        " о смене статуса ремонта на " + status);
-
-                notificationService.addNotification(car.getOwnerId(), message);
-
-                int unreadCount = notificationService.getUnreadCount(car.getOwnerId());
-                logger.info("После отправки у пользователя " + car.getOwnerId() +
-                        " непрочитанных уведомлений: " + unreadCount);
-            } else {
-                logger.warning("Автомобиль не найден для ремонта ID: " + repair.getId());
-            }
-        } catch (Exception e) {
-            logger.severe("Ошибка отправки уведомления: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public boolean deleteRepair(int repairId) {
         boolean success = repairDAO.deleteRepair(repairId);
@@ -149,29 +92,11 @@ public class RepairService implements IRepairService {
         return success;
     }
 
-    private String formatStatusMessage(String carInfo, String status) {
-        String baseMessage = "Статус ремонта вашего автомобиля " + carInfo + " изменен: ";
-        switch (status) {
-            case "DIAGNOSTICS":
-                return baseMessage + "Диагностика\nАвтомобиль проходит полную диагностику";
-            case "IN_REPAIR":
-                return baseMessage + "В ремонте\nНачались ремонтные работы";
-            case "COMPLETED":
-                return baseMessage + "Ремонт завершен\nАвтомобиль готов к выдаче!";
-            case "CANCELLED":
-                return baseMessage + "Отменен\nРемонт отменен";
-            default:
-                return baseMessage + getStatusText(status);
-        }
-    }
-
-    private String getStatusText(String status) {
-        switch (status) {
-            case "DIAGNOSTICS": return "Диагностика";
-            case "IN_REPAIR": return "В ремонте";
-            case "COMPLETED": return "Ремонт завершен";
-            case "CANCELLED": return "Отменен";
-            default: return status;
+    private String getNextStatus(String currentStatus) {
+        switch (currentStatus) {
+            case "DIAGNOSTICS": return "IN_REPAIR";
+            case "IN_REPAIR": return "COMPLETED";
+            default: return null;
         }
     }
 }

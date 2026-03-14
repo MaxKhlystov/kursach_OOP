@@ -16,10 +16,6 @@ public class UserService implements IUserService {
         this.userDAO = new UserDAO();
     }
 
-    public UserService(IUserDAO userDAO) {
-        this.userDAO = userDAO;
-    }
-
     @Override
     public String validateProfileUpdate(User user) {
         if (user == null || user.getId() == 0) {

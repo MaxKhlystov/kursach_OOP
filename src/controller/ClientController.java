@@ -2,13 +2,10 @@ package controller;
 
 import model.User;
 import model.Car;
-import model.Notification;
 import service.interfaces.ICarService;
 import service.impl.CarService;
 import service.interfaces.IRepairService;
 import service.impl.RepairService;
-import service.interfaces.INotificationService;
-import service.impl.NotificationService;
 import service.interfaces.IUserService;
 import service.impl.UserService;
 import view.frames.ClientView;
@@ -19,7 +16,6 @@ public class ClientController {
     private ClientView view;
     private final ICarService carService;
     private final IRepairService repairService;
-    private final INotificationService notificationService;
     private final IUserService userService;
     private final AuthController authController;
 
@@ -28,25 +24,12 @@ public class ClientController {
         this.authController = authController;
         this.carService = new CarService();
         this.repairService = new RepairService();
-        this.notificationService = new NotificationService();
         this.userService = new UserService();
-    }
-
-    // Для тестирования
-    public ClientController(User user, AuthController authController,
-                            ICarService carService, IRepairService repairService,
-                            INotificationService notificationService, IUserService userService) {
-        this.currentUser = user;
-        this.authController = authController;
-        this.carService = carService;
-        this.repairService = repairService;
-        this.notificationService = notificationService;
-        this.userService = userService;
     }
 
     public void setView(ClientView view) {
         this.view = view;
-        view.displayWelcome(getUnreadNotificationsCount());
+        view.displayWelcome();
     }
 
     public void handleViewCars() {
@@ -59,35 +42,14 @@ public class ClientController {
         view.displayRepairs(cars, repairService);
     }
 
-    public void handleViewNotifications() {
-        List<Notification> notifications = notificationService.getUserNotifications(currentUser.getId());
-        for (Notification notification : notifications) {
-            if (!notification.isRead()) {
-                notificationService.markNotificationAsRead(notification.getId());
-            }
-        }
-        view.displayNotifications(notifications);
-        view.displayWelcome(getUnreadNotificationsCount());
-    }
-
     public void handleAddCar(String brand, String model, int year, String vin, String licensePlate) {
-        System.out.println("=== ОТЛАДКА: handleAddCar ===");
-        System.out.println("brand: " + brand);
-        System.out.println("model: " + model);
-        System.out.println("year: " + year);
-        System.out.println("vin: " + vin);
-        System.out.println("licensePlate: " + licensePlate);
-        System.out.println("ownerId: " + currentUser.getId());
-
         Car car = new Car(brand, model, year, vin, licensePlate, currentUser.getId());
         boolean success = carService.addCar(car);
 
         if (success) {
-            System.out.println("Успех! Автомобиль добавлен с ID: " + car.getId());
             view.showSuccess("Автомобиль добавлен успешно!");
             handleViewCars();
         } else {
-            System.out.println("ОШИБКА! Автомобиль не добавлен");
             view.showError("Ошибка при добавлении автомобиля");
         }
     }
@@ -116,6 +78,23 @@ public class ClientController {
         }
     }
 
+    public boolean handleChangePassword(String oldPassword, String newPassword) {
+        if (!currentUser.getPassword().equals(oldPassword)) {
+            view.showError("Неверный текущий пароль");
+            return false;
+        }
+
+        currentUser.setPassword(newPassword);
+        boolean success = userService.updateUser(currentUser);
+
+        if (success) {
+            view.showSuccess("Пароль успешно изменен");
+        } else {
+            view.showError("Ошибка при смене пароля");
+        }
+        return success;
+    }
+
     public void handleShowUserGuide() {
         String guide = """
             РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ - КЛИЕНТ
@@ -134,10 +113,6 @@ public class ClientController {
                • Отслеживание текущего статуса ремонта
                • Просмотр стоимости ремонтов
 
-            4. УВЕДОМЛЕНИЯ
-               • Получение уведомлений о смене статуса ремонта
-               • Просмотр истории уведомлений
-
             СТАТУСЫ РЕМОНТА:
             • Диагностика - автомобиль находится на диагностике
             • В ремонте - ремонт выполняется
@@ -151,32 +126,11 @@ public class ClientController {
         view.displayAbout(about);
     }
 
-    public boolean handleChangePassword(String oldPassword, String newPassword) {
-        if (!currentUser.getPassword().equals(oldPassword)) {
-            view.showError("Неверный текущий пароль");
-            return false;
-        }
-
-        currentUser.setPassword(newPassword);
-        boolean success = userService.updateUser(currentUser);
-
-        if (success) {
-            view.showSuccess("Пароль успешно изменен");
-        } else {
-            view.showError("Ошибка при смене пароля");
-        }
-        return success;
-    }
-
     public void handleLogout() {
         authController.handleLogout();
     }
 
     public User getCurrentUser() {
         return currentUser;
-    }
-
-    public int getUnreadNotificationsCount() {
-        return notificationService.getUnreadCount(currentUser.getId());
     }
 }

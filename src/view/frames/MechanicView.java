@@ -15,12 +15,12 @@ import java.util.List;
 
 public class MechanicView extends JFrame {
     private final User currentUser;
-    private final MechanicController controller; // СОХРАНЯЕМ ССЫЛКУ
+    private final MechanicController controller;
     private JTextArea contentArea;
     private JPanel dynamicButtonsPanel;
 
     public MechanicView(MechanicController controller, User user) {
-        this.controller = controller; // СОХРАНЯЕМ
+        this.controller = controller;
         this.currentUser = user;
         initializeUI();
         setupController();
@@ -28,15 +28,14 @@ public class MechanicView extends JFrame {
 
     private void initializeUI() {
         setTitle("Автосервис - Механик: " + currentUser.getFullName());
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 700);
         setLocationRelativeTo(null);
 
-        // Обработчик закрытия окна - ТЕПЕРЬ ИСПОЛЬЗУЕМ СОХРАНЕННЫЙ КОНТРОЛЛЕР
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-                controller.handleLogout(); // ПРЯМОЙ ДОСТУП К КОНТРОЛЛЕРУ
+                controller.handleLogout();
             }
         });
 
@@ -127,18 +126,41 @@ public class MechanicView extends JFrame {
         systemMenu.getItem(0).addActionListener(e -> showProfileDialog());
         systemMenu.getItem(2).addActionListener(e -> controller.handleLogout());
         systemMenu.getItem(3).addActionListener(e -> System.exit(0));
-        carMenu.getItem(0).addActionListener(e -> controller.handleViewCars());
-        repairMenu.getItem(0).addActionListener(e -> showAddRepairDialog());
-        repairMenu.getItem(1).addActionListener(e -> controller.handleViewRepairs());
+
+        carMenu.getItem(0).addActionListener(e -> {
+            controller.handleViewCars();
+        });
+
+        repairMenu.getItem(0).addActionListener(e -> {
+            showAddRepairDialog();
+        });
+        repairMenu.getItem(1).addActionListener(e -> {
+            controller.handleViewRepairs();
+        });
+
         helpMenu.getItem(0).addActionListener(e -> controller.handleShowUserGuide());
         helpMenu.getItem(2).addActionListener(e -> controller.handleShowAbout());
 
         JPanel buttonPanel = (JPanel) getContentPane().getComponent(0);
-        ((JButton) buttonPanel.getComponent(0)).addActionListener(e -> showProfileDialog());
-        ((JButton) buttonPanel.getComponent(1)).addActionListener(e -> showAddRepairDialog());
-        ((JButton) buttonPanel.getComponent(2)).addActionListener(e -> controller.handleViewCars());
-        ((JButton) buttonPanel.getComponent(3)).addActionListener(e -> controller.handleViewRepairs());
-        ((JButton) buttonPanel.getComponent(4)).addActionListener(e -> controller.handleLogout());
+
+
+        if (buttonPanel.getComponentCount() >= 5) {
+            ((JButton) buttonPanel.getComponent(0)).addActionListener(e -> {
+                showProfileDialog();
+            });
+            ((JButton) buttonPanel.getComponent(1)).addActionListener(e -> {
+                showAddRepairDialog();
+            });
+            ((JButton) buttonPanel.getComponent(2)).addActionListener(e -> {
+                controller.handleViewCars();
+            });
+            ((JButton) buttonPanel.getComponent(3)).addActionListener(e -> {
+                controller.handleViewRepairs();
+            });
+            ((JButton) buttonPanel.getComponent(4)).addActionListener(e -> {
+                controller.handleLogout();
+            });
+        }
     }
 
     public void displayWelcome() {
@@ -238,7 +260,8 @@ public class MechanicView extends JFrame {
     }
 
     private void showAddRepairDialog() {
-        new AddRepairDialog(this, controller);
+        AddRepairDialog dialog = new AddRepairDialog(this, controller);
+        dialog.setVisible(true);
     }
 
     private String getNextStatusText(String currentStatus) {

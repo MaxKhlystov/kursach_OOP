@@ -21,11 +21,6 @@ public class CarModelService implements ICarModelService {
         this.brandDAO = new CarBrandDAO();
     }
 
-    public CarModelService(ICarModelDAO modelDAO, ICarBrandDAO brandDAO) {
-        this.modelDAO = modelDAO;
-        this.brandDAO = brandDAO;
-    }
-
     @Override
     public boolean addModel(String brandName, String modelName, int createdBy) {
         if (brandName == null || brandName.trim().isEmpty() ||
@@ -34,17 +29,14 @@ public class CarModelService implements ICarModelService {
             return false;
         }
 
-        // Проверяем или создаем марку
         CarBrand brand = brandDAO.getBrandByName(brandName);
         if (brand == null) {
-            // Если марка не существует, создаем ее
             brand = new CarBrand(brandName.trim(), createdBy);
             boolean brandCreated = brandDAO.addBrand(brand);
             if (!brandCreated) {
                 logger.severe("Не удалось создать марку: " + brandName);
                 return false;
             }
-            // Получаем ID созданной марки
             brand = brandDAO.getBrandByName(brandName);
             if (brand == null) {
                 return false;
@@ -67,7 +59,6 @@ public class CarModelService implements ICarModelService {
             return false;
         }
 
-        // Проверяем, существует ли уже такая модель у этой марки
         if (modelExists(brand.getName(), modelName)) {
             logger.info("Модель уже существует: " + brand.getName() + " " + modelName);
             return false;

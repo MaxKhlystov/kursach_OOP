@@ -32,7 +32,6 @@ public class AddRepairDialog extends JDialog {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Верхняя панель с выбором клиента
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBorder(BorderFactory.createTitledBorder("Выбор клиента"));
         topPanel.add(new JLabel("Клиент:"));
@@ -41,7 +40,6 @@ public class AddRepairDialog extends JDialog {
         clientComboBox.addActionListener(e -> updateCarList());
         topPanel.add(clientComboBox);
 
-        // Панель с автомобилями
         JPanel carPanel = new JPanel(new BorderLayout(10, 10));
         carPanel.setBorder(BorderFactory.createTitledBorder("Автомобили клиента"));
 
@@ -55,7 +53,6 @@ public class AddRepairDialog extends JDialog {
         carScrollPane.setPreferredSize(new Dimension(400, 120));
         carPanel.add(carScrollPane, BorderLayout.CENTER);
 
-        // Панель с данными ремонта
         JPanel repairPanel = new JPanel(new GridBagLayout());
         repairPanel.setBorder(BorderFactory.createTitledBorder("Данные ремонта"));
         GridBagConstraints gbc = new GridBagConstraints();
@@ -82,12 +79,11 @@ public class AddRepairDialog extends JDialog {
         costField = new JTextField("0.0", 10);
         repairPanel.add(costField, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton addButton = new JButton("Добавить ремонт");
         JButton cancelButton = new JButton("Отмена");
 
-        addButton.setFont(new Font("Arial", Font.BOLD, 12));
+        addButton.setFont(new Font("Arial", Font.PLAIN, 12));
         cancelButton.setFont(new Font("Arial", Font.PLAIN, 12));
 
         addButton.addActionListener(e -> onAdd());
@@ -96,7 +92,6 @@ public class AddRepairDialog extends JDialog {
         buttonPanel.add(addButton);
         buttonPanel.add(cancelButton);
 
-        // Собираем всё вместе
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(carPanel, BorderLayout.CENTER);
         mainPanel.add(repairPanel, BorderLayout.SOUTH);
@@ -104,7 +99,6 @@ public class AddRepairDialog extends JDialog {
         add(mainPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // Настройка отображения списка
         carList.setCellRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value,
@@ -159,7 +153,7 @@ public class AddRepairDialog extends JDialog {
         }
 
         if (carListModel.isEmpty()) {
-            carListModel.addElement(null); // Пустой элемент для сообщения
+            carListModel.addElement(null);
         }
     }
 

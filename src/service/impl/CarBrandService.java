@@ -16,10 +16,6 @@ public class CarBrandService implements ICarBrandService {
         this.brandDAO = new CarBrandDAO();
     }
 
-    public CarBrandService(ICarBrandDAO brandDAO) {
-        this.brandDAO = brandDAO;
-    }
-
     @Override
     public boolean addBrand(String name, int createdBy) {
         if (name == null || name.trim().isEmpty()) {

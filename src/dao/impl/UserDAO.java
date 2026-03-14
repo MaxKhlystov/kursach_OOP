@@ -28,7 +28,6 @@ public class UserDAO implements IUserDAO {
             int result = pstmt.executeUpdate();
 
             if (result > 0) {
-                // Получаем ID последней вставленной записи
                 String idSql = "SELECT last_insert_rowid() as id";
                 try (Statement stmt = conn.createStatement();
                      ResultSet rs = stmt.executeQuery(idSql)) {

@@ -50,7 +50,6 @@ public class EnterPasswordDialog extends JDialog {
         passwordField = new JPasswordField(15);
         mainPanel.add(passwordField, gbc);
 
-        // Панель кнопок
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton okButton = new JButton("OK");
         JButton cancelButton = new JButton("Отмена");

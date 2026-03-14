@@ -22,16 +22,11 @@ public class AuthController {
     private AdminView currentAdminView;
     private static final Logger logger = Logger.getLogger(AuthController.class.getName());
 
-    private User pendingUser; // для связывания аккаунтов
+    private User pendingUser;
 
     public AuthController() {
         this.authService = new AuthService();
         this.userService = new UserService();
-    }
-
-    public AuthController(IAuthService authService, IUserService userService) {
-        this.authService = authService;
-        this.userService = userService;
     }
 
     public void setLoginView(LoginView loginView) {
@@ -42,16 +37,23 @@ public class AuthController {
         this.registrationView = registrationView;
     }
 
-    // ИСПРАВЛЕНО: теперь возвращает User
     public User handleLogin(String emailOrPhone, String password) {
         User user = authService.login(emailOrPhone, password);
         if (user != null) {
-            loginView.hideView();
-            openDashboard(user);
-            return user;  // ← Возвращаем пользователя
+            return user;
         } else {
             loginView.showError("Неверный email/телефон или пароль");
-            return null;  // ← Возвращаем null при ошибке
+            return null;
+        }
+    }
+
+    public void openDashboardWithRoleCheck(User user, String selectedRole) {
+        if (user.getRole().equals(selectedRole)) {
+            loginView.hideView();
+            openDashboard(user);
+        } else {
+            loginView.showError("Вы вошли как " + user.getRole() +
+                    ", но выбрали роль " + selectedRole + ". Пожалуйста, выберите правильную роль.");
         }
     }
 
@@ -60,19 +62,17 @@ public class AuthController {
         roleDialog.setVisible(true);
 
         String selectedRole = roleDialog.getSelectedRole();
-        if (selectedRole == null) return; // Пользователь закрыл диалог
+        if (selectedRole == null) return;
 
         if ("MECHANIC".equals(selectedRole) || "ADMIN".equals(selectedRole)) {
-            // Проверка пароля для механиков и админов
             EnterPasswordDialog passwordDialog = new EnterPasswordDialog(loginView, selectedRole);
             passwordDialog.setVisible(true);
 
             if (!passwordDialog.isSuccess()) {
-                return; // Неверный пароль или отмена
+                return;
             }
         }
 
-        // Показываем окно регистрации с выбранной ролью
         registrationView.setRole(selectedRole);
         registrationView.showView();
     }
@@ -86,7 +86,6 @@ public class AuthController {
 
         User user = new User(fullName, password, role, email, phone);
 
-        // Если есть ожидающий пользователь для связывания
         if (pendingUser != null) {
             user.setLinkedUserId(pendingUser.getId());
         }

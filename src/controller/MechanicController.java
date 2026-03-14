@@ -9,10 +9,10 @@ import service.interfaces.IRepairService;
 import service.impl.RepairService;
 import service.interfaces.IUserService;
 import service.impl.UserService;
-import service.interfaces.INotificationService;
-import service.impl.NotificationService;
 import view.frames.MechanicView;
+
 import java.util.List;
+import java.util.logging.Logger;
 
 public class MechanicController {
     private final User currentUser;
@@ -20,8 +20,9 @@ public class MechanicController {
     private final ICarService carService;
     private final IRepairService repairService;
     private final IUserService userService;
-    private final INotificationService notificationService;
     private final AuthController authController;
+
+    private static final Logger logger = Logger.getLogger(MechanicController.class.getName());
 
     public MechanicController(User user, AuthController authController) {
         this.currentUser = user;
@@ -29,19 +30,6 @@ public class MechanicController {
         this.carService = new CarService();
         this.repairService = new RepairService();
         this.userService = new UserService();
-        this.notificationService = new NotificationService();
-    }
-
-    // Для тестирования
-    public MechanicController(User user, AuthController authController,
-                              ICarService carService, IRepairService repairService,
-                              IUserService userService, INotificationService notificationService) {
-        this.currentUser = user;
-        this.authController = authController;
-        this.carService = carService;
-        this.repairService = repairService;
-        this.userService = userService;
-        this.notificationService = notificationService;
     }
 
     public void setView(MechanicView view) {
@@ -101,6 +89,23 @@ public class MechanicController {
         }
     }
 
+    public boolean handleChangePassword(String oldPassword, String newPassword) {
+        if (!currentUser.getPassword().equals(oldPassword)) {
+            view.showError("Неверный текущий пароль");
+            return false;
+        }
+
+        currentUser.setPassword(newPassword);
+        boolean success = userService.updateUser(currentUser);
+
+        if (success) {
+            view.showSuccess("Пароль успешно изменен");
+        } else {
+            view.showError("Ошибка при смене пароля");
+        }
+        return success;
+    }
+
     public void handleShowUserGuide() {
         String guide = """
             РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ - МЕХАНИК
@@ -122,7 +127,6 @@ public class MechanicController {
 
             4. УПРАВЛЕНИЕ СТАТУСАМИ РЕМОНТА:
                • Диагностика → В ремонте → Ремонт завершен
-               • Автоматические уведомления клиентам при смене статуса
 
             СТАТУСЫ РЕМОНТА:
             • Диагностика - автомобиль находится на диагностике
@@ -135,23 +139,6 @@ public class MechanicController {
     public void handleShowAbout() {
         String about = "Автосервис v2.0\n\nПриложение для механиков автосервиса.\nТекущий пользователь: " + currentUser.getFullName() + "\nРоль: Механик";
         view.displayAbout(about);
-    }
-
-    public boolean handleChangePassword(String oldPassword, String newPassword) {
-        if (!currentUser.getPassword().equals(oldPassword)) {
-            view.showError("Неверный текущий пароль");
-            return false;
-        }
-
-        currentUser.setPassword(newPassword);
-        boolean success = userService.updateUser(currentUser);
-
-        if (success) {
-            view.showSuccess("Пароль успешно изменен");
-        } else {
-            view.showError("Ошибка при смене пароля");
-        }
-        return success;
     }
 
     public void handleLogout() {

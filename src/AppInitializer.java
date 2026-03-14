@@ -75,11 +75,16 @@ public class AppInitializer {
                 return;
             }
 
+            String validationError = registrationView.validateInputs();
+            if (validationError != null) {
+                registrationView.showError(validationError);
+                return;
+            }
+
             authController.handleRegister(fullName, password, confirmPassword, email, phone, role);
         });
 
         registrationView.setBackListener(e -> authController.showLogin());
-
         registrationView.setHaveAccountListener(e -> authController.handleLinkAccount());
     }
 
@@ -95,10 +100,8 @@ public class AppInitializer {
             }
 
             User user = authController.handleLogin(emailOrPhone, password);
-            if (user != null && !user.getRole().equals(selectedRole)) {
-                loginView.showError("Вы вошли как " + user.getRole() +
-                        ", но выбрали роль " + selectedRole + ". Пожалуйста, выберите правильную роль.");
-                authController.handleLogout();
+            if (user != null) {
+                authController.openDashboardWithRoleCheck(user, selectedRole);
             }
         });
 

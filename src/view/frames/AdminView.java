@@ -9,7 +9,6 @@ import model.Car;
 import model.Repair;
 import model.CarBrand;
 import model.CarModel;
-import model.Notification;
 import controller.AdminController;
 
 public class AdminView extends JFrame {
@@ -21,7 +20,6 @@ public class AdminView extends JFrame {
     private JTable repairsTable;
     private JTable brandsTable;
     private JTable modelsTable;
-    private JTable notificationsTable;
 
     public AdminView(AdminController controller, User user) {
         this.controller = controller;
@@ -40,29 +38,20 @@ public class AdminView extends JFrame {
 
         tabbedPane = new JTabbedPane();
 
-        // Вкладка с пользователями
         usersTable = new JTable();
         tabbedPane.addTab("Пользователи", new JScrollPane(usersTable));
 
-        // Вкладка с автомобилями
         carsTable = new JTable();
         tabbedPane.addTab("Автомобили", new JScrollPane(carsTable));
 
-        // Вкладка с ремонтами
         repairsTable = new JTable();
         tabbedPane.addTab("Ремонты", new JScrollPane(repairsTable));
 
-        // Вкладка с марками
         brandsTable = new JTable();
         tabbedPane.addTab("Марки авто", new JScrollPane(brandsTable));
 
-        // Вкладка с моделями
         modelsTable = new JTable();
         tabbedPane.addTab("Модели авто", new JScrollPane(modelsTable));
-
-        // Вкладка с уведомлениями
-        notificationsTable = new JTable();
-        tabbedPane.addTab("Уведомления", new JScrollPane(notificationsTable));
 
         add(tabbedPane, BorderLayout.CENTER);
 
@@ -122,7 +111,6 @@ public class AdminView extends JFrame {
         loadRepairs();
         loadBrands();
         loadModels();
-        loadNotifications();
     }
 
     private void loadUsers() {
@@ -241,28 +229,6 @@ public class AdminView extends JFrame {
         modelsTable.setModel(model);
     }
 
-    private void loadNotifications() {
-        List<Notification> notifications = controller.getAllNotifications();
-        String[] columns = {"ID", "Пользователь ID", "Сообщение", "Прочитано", "Дата"};
-        DefaultTableModel model = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        for (Notification notification : notifications) {
-            model.addRow(new Object[]{
-                    notification.getId(),
-                    notification.getUserId(),
-                    notification.getMessage(),
-                    notification.isRead() ? "Да" : "Нет",
-                    notification.getCreatedAt()
-            });
-        }
-        notificationsTable.setModel(model);
-    }
-
     private void onDelete() {
         int selectedTab = tabbedPane.getSelectedIndex();
         String tabTitle = tabbedPane.getTitleAt(selectedTab);
@@ -304,13 +270,6 @@ public class AdminView extends JFrame {
                 if (selectedRow >= 0) {
                     id = (int) modelsTable.getValueAt(selectedRow, 0);
                     deleteModel(id);
-                }
-                break;
-            case "Уведомления":
-                selectedRow = notificationsTable.getSelectedRow();
-                if (selectedRow >= 0) {
-                    id = (int) notificationsTable.getValueAt(selectedRow, 0);
-                    deleteNotification(id);
                 }
                 break;
         }
@@ -372,16 +331,6 @@ public class AdminView extends JFrame {
         });
     }
 
-    private void deleteNotification(int id) {
-        String itemName = "уведомление";
-        confirmAndDelete(itemName, id, new Runnable() {
-            @Override
-            public void run() {
-                controller.deleteNotification(id);
-            }
-        });
-    }
-
     private void confirmAndDelete(String itemName, int id, Runnable deleteAction) {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Вы уверены, что хотите удалить " + itemName + " с ID " + id + "?",
@@ -391,7 +340,7 @@ public class AdminView extends JFrame {
 
         if (confirm == JOptionPane.YES_OPTION) {
             deleteAction.run();
-            loadData(); // Обновляем таблицу после удаления
+            loadData();
         }
     }
 

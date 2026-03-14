@@ -36,7 +36,6 @@ public class DatabaseConnection {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
 
-            // Таблица пользователей с linked_user_id
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +50,6 @@ public class DatabaseConnection {
                 )
             """);
 
-            // Таблица марок автомобилей
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS car_brands (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,7 +60,6 @@ public class DatabaseConnection {
                 )
             """);
 
-            // Таблица моделей автомобилей
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS car_models (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,7 +73,6 @@ public class DatabaseConnection {
                 )
             """);
 
-            // Таблица автомобилей (обновленная)
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS cars (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,7 +87,6 @@ public class DatabaseConnection {
                 )
             """);
 
-            // Таблица ремонтов
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS repairs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,47 +103,10 @@ public class DatabaseConnection {
                 )
             """);
 
-            // Таблица уведомлений
-            stmt.execute("""
-                CREATE TABLE IF NOT EXISTS notifications (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    message TEXT NOT NULL,
-                    is_read BOOLEAN DEFAULT FALSE,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """);
-
-            // Создаем администратора по умолчанию (если нет ни одного)
-            createDefaultAdmin(conn);
-
             logger.info("Таблицы созданы успешно");
 
         } catch (SQLException e) {
             logger.severe("Ошибка инициализации БД: " + e.getMessage());
-        }
-    }
-
-    private static void createDefaultAdmin(Connection conn) {
-        String checkSql = "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'";
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(checkSql)) {
-
-            if (rs.next() && rs.getInt(1) == 0) {
-                String insertSql = "INSERT INTO users (full_name, password, role, email, phone) VALUES (?, ?, ?, ?, ?)";
-                try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
-                    pstmt.setString(1, "Главный администратор");
-                    pstmt.setString(2, "admin123"); // Пароль по умолчанию
-                    pstmt.setString(3, "ADMIN");
-                    pstmt.setString(4, "admin@autoservice.ru");
-                    pstmt.setString(5, "+70000000000");
-                    pstmt.executeUpdate();
-                    logger.info("Создан администратор по умолчанию");
-                }
-            }
-        } catch (SQLException e) {
-            logger.severe("Ошибка создания администратора: " + e.getMessage());
         }
     }
 

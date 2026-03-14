@@ -5,7 +5,6 @@ import java.awt.*;
 import model.User;
 import model.Car;
 import model.Repair;
-import model.Notification;
 import service.interfaces.IRepairService;
 import controller.ClientController;
 import view.dialogs.AddCarDialog;
@@ -15,12 +14,12 @@ import java.util.List;
 
 public class ClientView extends JFrame {
     private final User currentUser;
-    private final ClientController controller; // СОХРАНЯЕМ ССЫЛКУ
+    private final ClientController controller;
     private JTextArea contentArea;
     private JPanel dynamicButtonsPanel;
 
     public ClientView(ClientController controller, User user) {
-        this.controller = controller; // СОХРАНЯЕМ
+        this.controller = controller;
         this.currentUser = user;
         initializeUI();
         setupController();
@@ -32,11 +31,10 @@ public class ClientView extends JFrame {
         setSize(900, 700);
         setLocationRelativeTo(null);
 
-        // Обработчик закрытия окна - ТЕПЕРЬ ИСПОЛЬЗУЕМ СОХРАНЕННЫЙ КОНТРОЛЛЕР
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-                controller.handleLogout(); // ПРЯМОЙ ДОСТУП К КОНТРОЛЛЕРУ
+                controller.handleLogout();
             }
         });
 
@@ -68,10 +66,6 @@ public class ClientView extends JFrame {
         JMenuItem myRepairsMenuItem = new JMenuItem("Мои ремонты");
         repairMenu.add(myRepairsMenuItem);
 
-        JMenu notificationMenu = new JMenu("Уведомления");
-        JMenuItem viewNotificationsMenuItem = new JMenuItem("Просмотреть уведомления");
-        notificationMenu.add(viewNotificationsMenuItem);
-
         JMenu helpMenu = new JMenu("Помощь");
         JMenuItem userGuideMenuItem = new JMenuItem("Руководство пользователя");
         JMenuItem aboutMenuItem = new JMenuItem("О программе");
@@ -82,7 +76,6 @@ public class ClientView extends JFrame {
         menuBar.add(systemMenu);
         menuBar.add(carMenu);
         menuBar.add(repairMenu);
-        menuBar.add(notificationMenu);
         menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);
@@ -97,13 +90,11 @@ public class ClientView extends JFrame {
         JButton addCarButton = new JButton("Добавить авто");
         JButton myCarsButton = new JButton("Мои автомобили");
         JButton myRepairsButton = new JButton("Мои ремонты");
-        JButton notificationsButton = new JButton("Уведомления");
 
         buttonPanel.add(profileButton);
         buttonPanel.add(addCarButton);
         buttonPanel.add(myCarsButton);
         buttonPanel.add(myRepairsButton);
-        buttonPanel.add(notificationsButton);
         buttonPanel.add(logoutButton);
 
         add(buttonPanel, BorderLayout.NORTH);
@@ -129,60 +120,55 @@ public class ClientView extends JFrame {
         JMenu systemMenu = menuBar.getMenu(0);
         JMenu carMenu = menuBar.getMenu(1);
         JMenu repairMenu = menuBar.getMenu(2);
-        JMenu notificationMenu = menuBar.getMenu(3);
-        JMenu helpMenu = menuBar.getMenu(4);
+        JMenu helpMenu = menuBar.getMenu(3);
 
         systemMenu.getItem(0).addActionListener(e -> showProfileDialog());
         systemMenu.getItem(2).addActionListener(e -> controller.handleLogout());
         systemMenu.getItem(3).addActionListener(e -> System.exit(0));
 
-        // ВАЖНО: Проверяем, что пункты меню существуют
-        if (carMenu.getItemCount() > 0) {
-            carMenu.getItem(0).addActionListener(e -> {
-                System.out.println("=== Меню: Добавить автомобиль нажато ===");
-                showAddCarDialog();
-            });
-            carMenu.getItem(1).addActionListener(e -> controller.handleViewCars());
-        } else {
-            System.out.println("=== ОШИБКА: carMenu не содержит пунктов ===");
-        }
+        carMenu.getItem(0).addActionListener(e -> {
+            showAddCarDialog();
+        });
+        carMenu.getItem(1).addActionListener(e -> {
+            controller.handleViewCars();
+        });
 
-        repairMenu.getItem(0).addActionListener(e -> controller.handleViewRepairs());
-        notificationMenu.getItem(0).addActionListener(e -> controller.handleViewNotifications());
+        repairMenu.getItem(0).addActionListener(e -> {
+            controller.handleViewRepairs();
+        });
+
         helpMenu.getItem(0).addActionListener(e -> controller.handleShowUserGuide());
         helpMenu.getItem(2).addActionListener(e -> controller.handleShowAbout());
 
         JPanel buttonPanel = (JPanel) getContentPane().getComponent(0);
 
-        // Проверяем, что кнопки существуют
-        if (buttonPanel.getComponentCount() > 1) {
-            ((JButton) buttonPanel.getComponent(0)).addActionListener(e -> showProfileDialog());
+
+        if (buttonPanel.getComponentCount() >= 5) {
+            ((JButton) buttonPanel.getComponent(0)).addActionListener(e -> {
+                showProfileDialog();
+            });
             ((JButton) buttonPanel.getComponent(1)).addActionListener(e -> {
-                System.out.println("=== Кнопка: Добавить авто нажата ===");
                 showAddCarDialog();
             });
-            ((JButton) buttonPanel.getComponent(2)).addActionListener(e -> controller.handleViewCars());
-            ((JButton) buttonPanel.getComponent(3)).addActionListener(e -> controller.handleViewRepairs());
-            ((JButton) buttonPanel.getComponent(4)).addActionListener(e -> controller.handleViewNotifications());
-            ((JButton) buttonPanel.getComponent(5)).addActionListener(e -> controller.handleLogout());
-        } else {
-            System.out.println("=== ОШИБКА: buttonPanel не содержит достаточно кнопок ===");
+            ((JButton) buttonPanel.getComponent(2)).addActionListener(e -> {
+                controller.handleViewCars();
+            });
+            ((JButton) buttonPanel.getComponent(3)).addActionListener(e -> {
+                controller.handleViewRepairs();
+            });
+            ((JButton) buttonPanel.getComponent(4)).addActionListener(e -> {
+                controller.handleLogout();
+            });
         }
     }
 
-    public void displayWelcome(int unreadCount) {
-        String notificationInfo = unreadCount > 0 ?
-                String.format("\nУ вас %d непрочитанных уведомлений", unreadCount) :
-                "\nУведомлений нет";
-
+    public void displayWelcome() {
         contentArea.setText("Добро пожаловать, " + currentUser.getFullName() + "!\n\n" +
                 "Вы вошли как клиент. Используйте меню или кнопки для работы с приложением.\n\n" +
                 "Доступные функции:\n" +
                 "• Личный кабинет (изменение данных)\n" +
                 "• Добавление и управление автомобилями\n" +
-                "• Просмотр истории ремонтов\n" +
-                "• Просмотр уведомлений о статусе ремонтов" +
-                notificationInfo);
+                "• Просмотр истории ремонтов");
     }
 
     public void displayCars(List<Car> cars, ClientController controller) {
@@ -261,43 +247,13 @@ public class ClientView extends JFrame {
         dynamicButtonsPanel.repaint();
     }
 
-    public void displayNotifications(List<Notification> notifications) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("УВЕДОМЛЕНИЯ\n\n");
-
-        if (notifications.isEmpty()) {
-            sb.append("У вас нет уведомлений.\n");
-        } else {
-            for (Notification notification : notifications) {
-                String status = notification.isRead() ? "Прочитано" : "Новое";
-                sb.append(status).append(" - ").append(notification.getCreatedAt().toLocalDate())
-                        .append("\n").append(notification.getMessage()).append("\n\n");
-            }
-        }
-
-        contentArea.setText(sb.toString());
-        dynamicButtonsPanel.removeAll();
-        dynamicButtonsPanel.revalidate();
-        dynamicButtonsPanel.repaint();
-    }
-
     private void showProfileDialog() {
         new ProfileDialog(this, currentUser, controller);
     }
 
     private void showAddCarDialog() {
-        System.out.println("=== ОТЛАДКА: showAddCarDialog вызван ===");
-        try {
-            AddCarDialog dialog = new AddCarDialog(this, controller);
-            dialog.setVisible(true);
-            System.out.println("=== Диалог открыт ===");
-        } catch (Exception e) {
-            System.out.println("=== ОШИБКА при открытии диалога: " + e.getMessage());
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Ошибка при открытии диалога: " + e.getMessage(),
-                    "Ошибка", JOptionPane.ERROR_MESSAGE);
-        }
+        AddCarDialog dialog = new AddCarDialog(this, controller);
+        dialog.setVisible(true);
     }
 
     public void showView() {
