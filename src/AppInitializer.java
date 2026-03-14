@@ -60,27 +60,6 @@ public class AppInitializer {
         });
     }
 
-    private void setupLoginListeners(LoginView loginView, AuthController authController) {
-        loginView.setLoginListener(e -> {
-            String emailOrPhone = loginView.getEmailOrPhone();
-            String password = loginView.getPassword();
-
-            if (emailOrPhone.isEmpty() || password.isEmpty()) {
-                loginView.showError("Заполните все поля");
-                return;
-            }
-
-            authController.handleLogin(emailOrPhone, password);
-        });
-
-        loginView.setRegisterListener(e -> authController.showRegistration());
-
-        loginView.setExitListener(e -> {
-            DatabaseConnection.closeConnection();
-            System.exit(0);
-        });
-    }
-
     private void setupRegistrationListeners(RegistrationView registrationView, AuthController authController) {
         registrationView.setRegisterListener(e -> {
             String fullName = registrationView.getFullName();
@@ -99,6 +78,30 @@ public class AppInitializer {
         });
 
         registrationView.setBackListener(e -> authController.showLogin());
+
+        registrationView.setHaveAccountListener(e -> authController.handleLinkAccount());
+    }
+
+    private void setupLoginListeners(LoginView loginView, AuthController authController) {
+        loginView.setLoginListener(e -> {
+            String emailOrPhone = loginView.getEmailOrPhone();
+            String password = loginView.getPassword();
+
+            if (emailOrPhone.isEmpty() || password.isEmpty()) {
+                loginView.showError("Заполните все поля");
+                return;
+            }
+
+            authController.handleLogin(emailOrPhone, password);
+        });
+
+        // Изменяем: теперь вызываем startRegistration вместо прямого показа
+        loginView.setRegisterListener(e -> authController.startRegistration());
+
+        loginView.setExitListener(e -> {
+            DatabaseConnection.closeConnection();
+            System.exit(0);
+        });
     }
 
     private void setupShutdownHook() {

@@ -28,7 +28,7 @@ public class ClientView extends JFrame {
 
     private void initializeUI() {
         setTitle("Автосервис - Клиент: " + currentUser.getFullName());
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 700);
         setLocationRelativeTo(null);
 

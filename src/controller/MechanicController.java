@@ -137,6 +137,23 @@ public class MechanicController {
         view.displayAbout(about);
     }
 
+    public boolean handleChangePassword(String oldPassword, String newPassword) {
+        if (!currentUser.getPassword().equals(oldPassword)) {
+            view.showError("Неверный текущий пароль");
+            return false;
+        }
+
+        currentUser.setPassword(newPassword);
+        boolean success = userService.updateUser(currentUser);
+
+        if (success) {
+            view.showSuccess("Пароль успешно изменен");
+        } else {
+            view.showError("Ошибка при смене пароля");
+        }
+        return success;
+    }
+
     public void handleLogout() {
         authController.handleLogout();
     }

@@ -5,23 +5,29 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class RegistrationView extends JFrame {
-    private JTextField fullNameField;      // Было usernameField, теперь fullNameField
+    private JTextField fullNameField;
     private JPasswordField passwordField;
     private JPasswordField confirmPasswordField;
     private JTextField emailField;
     private JTextField phoneField;
-    private JComboBox<String> roleComboBox;
     private JButton registerButton;
     private JButton backButton;
+    private JButton haveAccountButton; // Новая кнопка
+
+    private String role; // роль будет устанавливаться извне
 
     public RegistrationView() {
         initializeUI();
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  // Выход при закрытии
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+        setTitle("Автосервис - Регистрация " + (role.equals("CLIENT") ? "клиента" : "механика"));
     }
 
     private void initializeUI() {
-        setTitle("Автосервис - Регистрация");
-        setSize(450, 450);
+        setSize(450, 500);
         setLocationRelativeTo(null);
         setResizable(false);
 
@@ -32,38 +38,93 @@ public class RegistrationView extends JFrame {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        JPanel formPanel = new JPanel(new GridLayout(7, 2, 10, 20));
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // ФИО теперь первое поле (было username)
-        formPanel.add(new JLabel("ФИО:"));
-        fullNameField = new JTextField();
-        formPanel.add(fullNameField);
+        // ФИО
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.3;
+        formPanel.add(new JLabel("ФИО:"), gbc);
 
-        formPanel.add(new JLabel("Пароль:"));
-        passwordField = new JPasswordField();
-        formPanel.add(passwordField);
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        fullNameField = new JTextField(15);
+        formPanel.add(fullNameField, gbc);
 
-        formPanel.add(new JLabel("Подтвердите пароль:"));
-        confirmPasswordField = new JPasswordField();
-        formPanel.add(confirmPasswordField);
+        // Пароль
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0.3;
+        formPanel.add(new JLabel("Пароль:"), gbc);
 
-        formPanel.add(new JLabel("Email:"));
-        emailField = new JTextField();
-        formPanel.add(emailField);
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        passwordField = new JPasswordField(15);
+        formPanel.add(passwordField, gbc);
 
-        formPanel.add(new JLabel("Телефон:"));
-        phoneField = new JTextField();
-        formPanel.add(phoneField);
+        // Подтверждение пароля
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 0.3;
+        formPanel.add(new JLabel("Подтвердите пароль:"), gbc);
 
-        formPanel.add(new JLabel("Роль:"));
-        String[] roles = {"CLIENT", "MECHANIC"};
-        roleComboBox = new JComboBox<>(roles);
-        formPanel.add(roleComboBox);
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        confirmPasswordField = new JPasswordField(15);
+        formPanel.add(confirmPasswordField, gbc);
 
+        // Телефон
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.weightx = 0.3;
+        formPanel.add(new JLabel("Телефон:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        phoneField = new JTextField(15);
+        formPanel.add(phoneField, gbc);
+
+        // Email
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.weightx = 0.3;
+        formPanel.add(new JLabel("Email:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        emailField = new JTextField(15);
+        formPanel.add(emailField, gbc);
+
+        // Панель кнопок
+        JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+
+        JPanel mainButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         registerButton = new JButton("Зарегистрироваться");
         backButton = new JButton("Назад");
-        formPanel.add(backButton);
-        formPanel.add(registerButton);
+        mainButtonPanel.add(registerButton);
+        mainButtonPanel.add(backButton);
+
+        JPanel linkPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        haveAccountButton = new JButton("У меня уже есть аккаунт");
+        haveAccountButton.setFont(new Font("Arial", Font.PLAIN, 12));
+        haveAccountButton.setForeground(Color.BLUE);
+        haveAccountButton.setBorderPainted(false);
+        haveAccountButton.setContentAreaFilled(false);
+        haveAccountButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        linkPanel.add(haveAccountButton);
+
+        buttonPanel.add(mainButtonPanel);
+        buttonPanel.add(linkPanel);
+
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.NONE;
+        formPanel.add(buttonPanel, gbc);
 
         mainPanel.add(formPanel, BorderLayout.CENTER);
         add(mainPanel);
@@ -77,12 +138,16 @@ public class RegistrationView extends JFrame {
         backButton.addActionListener(listener);
     }
 
+    public void setHaveAccountListener(ActionListener listener) {
+        haveAccountButton.addActionListener(listener);
+    }
+
     public String getFullName() { return fullNameField.getText().trim(); }
     public String getPassword() { return new String(passwordField.getPassword()); }
     public String getConfirmPassword() { return new String(confirmPasswordField.getPassword()); }
     public String getEmail() { return emailField.getText().trim(); }
     public String getPhone() { return phoneField.getText().trim(); }
-    public String getRole() { return (String) roleComboBox.getSelectedItem(); }
+    public String getRole() { return role; }
 
     public void showView() {
         setVisible(true);
@@ -107,6 +172,5 @@ public class RegistrationView extends JFrame {
         confirmPasswordField.setText("");
         emailField.setText("");
         phoneField.setText("");
-        roleComboBox.setSelectedIndex(0);
     }
 }

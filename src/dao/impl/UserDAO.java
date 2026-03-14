@@ -13,21 +13,33 @@ public class UserDAO implements IUserDAO {
 
     @Override
     public boolean createUser(User user) {
-        String sql = "INSERT INTO users (full_name, password, role, email, phone) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (full_name, password, role, email, phone, linked_user_id) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {  // Убрали RETURN_GENERATED_KEYS
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, user.getFullName());
             pstmt.setString(2, user.getPassword());
             pstmt.setString(3, user.getRole());
             pstmt.setString(4, user.getEmail());
             pstmt.setString(5, user.getPhone());
+            pstmt.setObject(6, user.getLinkedUserId() != 0 ? user.getLinkedUserId() : null);
 
             int result = pstmt.executeUpdate();
 
-            logger.info("Пользователь создан: " + user.getFullName() + ", result=" + result);
-            return result > 0;
+            if (result > 0) {
+                // Получаем ID последней вставленной записи
+                String idSql = "SELECT last_insert_rowid() as id";
+                try (Statement stmt = conn.createStatement();
+                     ResultSet rs = stmt.executeQuery(idSql)) {
+                    if (rs.next()) {
+                        user.setId(rs.getInt("id"));
+                        logger.info("Пользователь создан с ID: " + user.getId());
+                    }
+                }
+                return true;
+            }
+            return false;
 
         } catch (SQLException e) {
             logger.severe("Ошибка создания пользователя: " + e.getMessage());
@@ -53,6 +65,26 @@ public class UserDAO implements IUserDAO {
             }
         } catch (SQLException e) {
             logger.severe("Ошибка аутентификации: " + e.getMessage());
+        }
+        return null;
+    }
+
+    @Override
+    public User findByEmailOrPhone(String emailOrPhone) {
+        String sql = "SELECT * FROM users WHERE email = ? OR phone = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, emailOrPhone);
+            pstmt.setString(2, emailOrPhone);
+
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return extractUserFromResultSet(rs);
+            }
+        } catch (SQLException e) {
+            logger.severe("Ошибка поиска пользователя: " + e.getMessage());
         }
         return null;
     }
@@ -151,8 +183,44 @@ public class UserDAO implements IUserDAO {
     }
 
     @Override
+    public List<User> getMechanics() {
+        List<User> mechanics = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE role = 'MECHANIC' ORDER BY full_name";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                mechanics.add(extractUserFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            logger.severe("Ошибка получения механиков: " + e.getMessage());
+        }
+        return mechanics;
+    }
+
+    @Override
+    public List<User> getAdmins() {
+        List<User> admins = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE role = 'ADMIN' ORDER BY full_name";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                admins.add(extractUserFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            logger.severe("Ошибка получения администраторов: " + e.getMessage());
+        }
+        return admins;
+    }
+
+    @Override
     public boolean updateUser(User user) {
-        String sql = "UPDATE users SET email = ?, phone = ?, full_name = ? WHERE id = ?";
+        String sql = "UPDATE users SET email = ?, phone = ?, full_name = ?, password = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -160,7 +228,8 @@ public class UserDAO implements IUserDAO {
             pstmt.setString(1, user.getEmail());
             pstmt.setString(2, user.getPhone());
             pstmt.setString(3, user.getFullName());
-            pstmt.setInt(4, user.getId());
+            pstmt.setString(4, user.getPassword());
+            pstmt.setInt(5, user.getId());
 
             int result = pstmt.executeUpdate();
             logger.info("Пользователь обновлен: " + user.getFullName());
@@ -168,6 +237,26 @@ public class UserDAO implements IUserDAO {
 
         } catch (SQLException e) {
             logger.severe("Ошибка обновления пользователя: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean updatePassword(int userId, String newPassword) {
+        String sql = "UPDATE users SET password = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newPassword);
+            pstmt.setInt(2, userId);
+
+            int result = pstmt.executeUpdate();
+            logger.info("Пароль обновлен для пользователя ID: " + userId);
+            return result > 0;
+
+        } catch (SQLException e) {
+            logger.severe("Ошибка обновления пароля: " + e.getMessage());
             return false;
         }
     }
@@ -199,6 +288,7 @@ public class UserDAO implements IUserDAO {
         user.setRole(rs.getString("role"));
         user.setEmail(rs.getString("email"));
         user.setPhone(rs.getString("phone"));
+        user.setLinkedUserId(rs.getObject("linked_user_id") != null ? rs.getInt("linked_user_id") : 0);
         return user;
     }
 }
