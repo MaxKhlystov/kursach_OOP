@@ -15,8 +15,11 @@ public class CarDAO implements ICarDAO {
     public boolean addCar(Car car) {
         String sql = "INSERT INTO cars (brand, model, year, vin, license_plate, owner_id, registration_date) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
+        System.out.println("=== ОТЛАДКА: CarDAO.addCar ===");
+        System.out.println("SQL: " + sql);
+
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, car.getBrand());
             pstmt.setString(2, car.getModel());
@@ -26,12 +29,21 @@ public class CarDAO implements ICarDAO {
             pstmt.setInt(6, car.getOwnerId());
             pstmt.setString(7, car.getRegistrationDate().toString());
 
+            System.out.println("Parameters: " + car.getBrand() + ", " + car.getModel() + ", " +
+                    car.getYear() + ", " + car.getVin() + ", " + car.getLicensePlate() +
+                    ", " + car.getOwnerId() + ", " + car.getRegistrationDate());
+
             int result = pstmt.executeUpdate();
+            System.out.println("executeUpdate result: " + result);
 
             if (result > 0) {
-                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                // Получаем ID последней вставленной записи
+                String idSql = "SELECT last_insert_rowid() as id";
+                try (Statement stmt = conn.createStatement();
+                     ResultSet rs = stmt.executeQuery(idSql)) {
                     if (rs.next()) {
-                        car.setId(rs.getInt(1));
+                        car.setId(rs.getInt("id"));
+                        System.out.println("Автомобиль добавлен с ID: " + car.getId());
                     }
                 }
             }
@@ -40,6 +52,10 @@ public class CarDAO implements ICarDAO {
             return result > 0;
 
         } catch (SQLException e) {
+            System.out.println("SQL EXCEPTION: " + e.getMessage());
+            System.out.println("SQL State: " + e.getSQLState());
+            System.out.println("Error Code: " + e.getErrorCode());
+            e.printStackTrace();
             logger.severe("Ошибка добавления автомобиля: " + e.getMessage());
             return false;
         }

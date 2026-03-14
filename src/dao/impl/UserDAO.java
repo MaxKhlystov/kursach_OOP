@@ -280,6 +280,24 @@ public class UserDAO implements IUserDAO {
         return null;
     }
 
+    @Override
+    public boolean deleteUser(int userId) {
+        String sql = "DELETE FROM users WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            int result = pstmt.executeUpdate();
+            logger.info("Пользователь удален ID: " + userId + ", результат: " + result);
+            return result > 0;
+
+        } catch (SQLException e) {
+            logger.severe("Ошибка удаления пользователя: " + e.getMessage());
+            return false;
+        }
+    }
+
     private User extractUserFromResultSet(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId(rs.getInt("id"));

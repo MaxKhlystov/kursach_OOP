@@ -5,12 +5,9 @@ import service.interfaces.IAuthService;
 import service.impl.AuthService;
 import service.interfaces.IUserService;
 import service.impl.UserService;
-import view.frames.LoginView;
-import view.frames.RegistrationView;
-import view.frames.ClientView;
-import view.frames.MechanicView;
-import view.dialogs.RoleSelectionDialog;
-import view.dialogs.MechanicPasswordDialog;
+import view.frames.*;
+import view.dialogs.ChooseRoleDialog;
+import view.dialogs.EnterPasswordDialog;
 import view.dialogs.LinkAccountDialog;
 
 import java.util.logging.Logger;
@@ -22,6 +19,7 @@ public class AuthController {
     private RegistrationView registrationView;
     private ClientView currentClientView;
     private MechanicView currentMechanicView;
+    private AdminView currentAdminView;
     private static final Logger logger = Logger.getLogger(AuthController.class.getName());
 
     private User pendingUser; // для связывания аккаунтов
@@ -44,26 +42,29 @@ public class AuthController {
         this.registrationView = registrationView;
     }
 
-    public void handleLogin(String emailOrPhone, String password) {
+    // ИСПРАВЛЕНО: теперь возвращает User
+    public User handleLogin(String emailOrPhone, String password) {
         User user = authService.login(emailOrPhone, password);
         if (user != null) {
             loginView.hideView();
             openDashboard(user);
+            return user;  // ← Возвращаем пользователя
         } else {
             loginView.showError("Неверный email/телефон или пароль");
+            return null;  // ← Возвращаем null при ошибке
         }
     }
 
     public void startRegistration() {
-        RoleSelectionDialog roleDialog = new RoleSelectionDialog(loginView);
+        ChooseRoleDialog roleDialog = new ChooseRoleDialog(loginView);
         roleDialog.setVisible(true);
 
         String selectedRole = roleDialog.getSelectedRole();
         if (selectedRole == null) return; // Пользователь закрыл диалог
 
-        if ("MECHANIC".equals(selectedRole)) {
-            // Проверка пароля для механиков
-            MechanicPasswordDialog passwordDialog = new MechanicPasswordDialog(loginView);
+        if ("MECHANIC".equals(selectedRole) || "ADMIN".equals(selectedRole)) {
+            // Проверка пароля для механиков и админов
+            EnterPasswordDialog passwordDialog = new EnterPasswordDialog(loginView, selectedRole);
             passwordDialog.setVisible(true);
 
             if (!passwordDialog.isSuccess()) {
@@ -137,6 +138,10 @@ public class AuthController {
             currentMechanicView.hideView();
             currentMechanicView = null;
         }
+        if (currentAdminView != null) {
+            currentAdminView.hideView();
+            currentAdminView = null;
+        }
         loginView.clearFields();
         loginView.showView();
     }
@@ -149,13 +154,11 @@ public class AuthController {
             currentMechanicView = mechanicView;
             mechanicView.showView();
         } else if ("ADMIN".equals(user.getRole())) {
-            // TODO: Создать AdminController и AdminView
-            // Пока временно открываем как клиента
-            ClientController clientController = new ClientController(user, this);
-            ClientView clientView = new ClientView(clientController, user);
-            clientController.setView(clientView);
-            currentClientView = clientView;
-            clientView.showView();
+            AdminController adminController = new AdminController(user, this);
+            AdminView adminView = new AdminView(adminController, user);
+            adminController.setView(adminView);
+            currentAdminView = adminView;
+            adminView.showView();
         } else {
             ClientController clientController = new ClientController(user, this);
             ClientView clientView = new ClientView(clientController, user);

@@ -2,140 +2,212 @@ package view.dialogs;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 import model.User;
 import model.Car;
+import model.CarListItem;
 import controller.MechanicController;
-import java.util.List;
 
 public class AddRepairDialog extends JDialog {
     private final MechanicController controller;
+    private JComboBox<User> clientComboBox;
+    private JList<CarListItem> carList;
+    private DefaultListModel<CarListItem> carListModel;
+    private JTextField descriptionField;
+    private JTextField costField;
 
     public AddRepairDialog(JFrame parent, MechanicController controller) {
         super(parent, "Добавить ремонт", true);
         this.controller = controller;
         initializeUI();
+        loadClients();
     }
 
     private void initializeUI() {
-        setSize(500, 500);
+        setSize(500, 450);
         setLocationRelativeTo(getParent());
         setLayout(new BorderLayout(10, 10));
+        setResizable(false);
 
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Панель выбора клиента
-        JPanel clientPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel clientLabel = new JLabel("Выберите клиента:");
-        JComboBox<User> clientComboBox = new JComboBox<>();
-        JCheckBox filterCheckBox = new JCheckBox("Показать только автомобили выбранного клиента");
+        // Верхняя панель с выбором клиента
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setBorder(BorderFactory.createTitledBorder("Выбор клиента"));
+        topPanel.add(new JLabel("Клиент:"));
+        clientComboBox = new JComboBox<>();
+        clientComboBox.setPreferredSize(new Dimension(250, 30));
+        clientComboBox.addActionListener(e -> updateCarList());
+        topPanel.add(clientComboBox);
 
-        List<User> clients = controller.getClients();
-        for (User client : clients) {
-            clientComboBox.addItem(client);
-        }
+        // Панель с автомобилями
+        JPanel carPanel = new JPanel(new BorderLayout(10, 10));
+        carPanel.setBorder(BorderFactory.createTitledBorder("Автомобили клиента"));
 
-        clientPanel.add(clientLabel);
-        clientPanel.add(clientComboBox);
-        clientPanel.add(filterCheckBox);
+        carListModel = new DefaultListModel<>();
+        carList = new JList<>(carListModel);
+        carList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        carList.setVisibleRowCount(5);
+        carList.setFont(new Font("Arial", Font.PLAIN, 12));
 
-        // Панель выбора автомобиля
-        JPanel carPanel = new JPanel(new BorderLayout());
-        JLabel carLabel = new JLabel("Выберите автомобиль:");
-        JComboBox<Car> carComboBox = new JComboBox<>();
+        JScrollPane carScrollPane = new JScrollPane(carList);
+        carScrollPane.setPreferredSize(new Dimension(400, 120));
+        carPanel.add(carScrollPane, BorderLayout.CENTER);
 
-        List<Car> allCars = controller.getAllCars();
-        for (Car car : allCars) {
-            carComboBox.addItem(car);
-        }
+        // Панель с данными ремонта
+        JPanel repairPanel = new JPanel(new GridBagLayout());
+        repairPanel.setBorder(BorderFactory.createTitledBorder("Данные ремонта"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        carPanel.add(carLabel, BorderLayout.NORTH);
-        carPanel.add(carComboBox, BorderLayout.CENTER);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.3;
+        repairPanel.add(new JLabel("Описание:"), gbc);
 
-        // Панель данных ремонта
-        JPanel repairPanel = new JPanel(new GridLayout(3, 2, 10, 10));
-        JTextField descriptionField = new JTextField();
-        JTextField costField = new JTextField("0.0");
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        descriptionField = new JTextField(20);
+        repairPanel.add(descriptionField, gbc);
 
-        repairPanel.add(new JLabel("Описание ремонта:"));
-        repairPanel.add(descriptionField);
-        repairPanel.add(new JLabel("Стоимость:"));
-        repairPanel.add(costField);
-        repairPanel.add(new JLabel("Статус:"));
-        repairPanel.add(new JLabel("Диагностика (автоматически)"));
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0.3;
+        repairPanel.add(new JLabel("Стоимость (руб):"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        costField = new JTextField("0.0", 10);
+        repairPanel.add(costField, gbc);
 
         // Панель кнопок
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton addButton = new JButton("Добавить ремонт");
         JButton cancelButton = new JButton("Отмена");
 
-        // Логика фильтрации
-        clientComboBox.addActionListener(e -> {
-            if (filterCheckBox.isSelected()) {
-                User selectedClient = (User) clientComboBox.getSelectedItem();
-                if (selectedClient != null) {
-                    carComboBox.removeAllItems();
-                    List<Car> clientCars = controller.getClientCars(selectedClient.getId());
-                    for (Car car : clientCars) {
-                        carComboBox.addItem(car);
-                    }
-                }
-            }
-        });
+        addButton.setFont(new Font("Arial", Font.BOLD, 12));
+        cancelButton.setFont(new Font("Arial", Font.PLAIN, 12));
 
-        filterCheckBox.addActionListener(e -> {
-            if (filterCheckBox.isSelected()) {
-                User selectedClient = (User) clientComboBox.getSelectedItem();
-                if (selectedClient != null) {
-                    carComboBox.removeAllItems();
-                    List<Car> clientCars = controller.getClientCars(selectedClient.getId());
-                    for (Car car : clientCars) {
-                        carComboBox.addItem(car);
-                    }
-                }
-            } else {
-                carComboBox.removeAllItems();
-                List<Car> allCarsList = controller.getAllCars();
-                for (Car car : allCarsList) {
-                    carComboBox.addItem(car);
-                }
-            }
-        });
-
-        addButton.addActionListener(e -> {
-            try {
-                Car selectedCar = (Car) carComboBox.getSelectedItem();
-                String description = descriptionField.getText().trim();
-                double cost = Double.parseDouble(costField.getText().trim());
-
-                if (selectedCar == null) {
-                    JOptionPane.showMessageDialog(this, "Выберите автомобиль", "Ошибка", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (description.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Введите описание ремонта", "Ошибка", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                controller.handleAddRepair(selectedCar.getId(), description, cost);
-                dispose();
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Проверьте правильность числовых полей", "Ошибка", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
+        addButton.addActionListener(e -> onAdd());
         cancelButton.addActionListener(e -> dispose());
 
         buttonPanel.add(addButton);
         buttonPanel.add(cancelButton);
 
-        mainPanel.add(clientPanel, BorderLayout.NORTH);
+        // Собираем всё вместе
+        mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(carPanel, BorderLayout.CENTER);
         mainPanel.add(repairPanel, BorderLayout.SOUTH);
 
         add(mainPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
-        setVisible(true);
+
+        // Настройка отображения списка
+        carList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                                                          int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value == null) {
+                    setText("Нет доступных автомобилей");
+                    setForeground(Color.GRAY);
+                } else if (value instanceof CarListItem) {
+                    setText(value.toString());
+                    setForeground(Color.BLACK);
+                }
+                return this;
+            }
+        });
+    }
+
+    private void loadClients() {
+        List<User> clients = controller.getClients();
+        DefaultComboBoxModel<User> model = new DefaultComboBoxModel<>();
+        for (User client : clients) {
+            model.addElement(client);
+        }
+        clientComboBox.setModel(model);
+        clientComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                                                          int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof User) {
+                    setText(((User) value).getFullName());
+                }
+                return this;
+            }
+        });
+
+        if (clients.size() > 0) {
+            clientComboBox.setSelectedIndex(0);
+            updateCarList();
+        }
+    }
+
+    private void updateCarList() {
+        carListModel.clear();
+
+        User selectedClient = (User) clientComboBox.getSelectedItem();
+        if (selectedClient != null) {
+            List<Car> clientCars = controller.getClientCars(selectedClient.getId());
+            for (Car car : clientCars) {
+                carListModel.addElement(new CarListItem(car));
+            }
+        }
+
+        if (carListModel.isEmpty()) {
+            carListModel.addElement(null); // Пустой элемент для сообщения
+        }
+    }
+
+    private void onAdd() {
+        try {
+            User selectedClient = (User) clientComboBox.getSelectedItem();
+            CarListItem selectedCarItem = carList.getSelectedValue();
+
+            if (selectedClient == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Выберите клиента", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (selectedCarItem == null || selectedCarItem.getCar() == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Выберите автомобиль", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String description = descriptionField.getText().trim();
+            if (description.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                        "Введите описание ремонта", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            double cost;
+            try {
+                cost = Double.parseDouble(costField.getText().trim());
+                if (cost < 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "Стоимость не может быть отрицательной", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Стоимость должна быть числом", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            controller.handleAddRepair(selectedCarItem.getCar().getId(), description, cost);
+            dispose();
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Ошибка: " + e.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
 }

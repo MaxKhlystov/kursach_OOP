@@ -1,7 +1,6 @@
 package view.dialogs;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 
 public class ChooseRoleDialog extends JDialog {
     private String selectedRole = null;
@@ -12,7 +11,7 @@ public class ChooseRoleDialog extends JDialog {
     }
 
     private void initializeUI() {
-        setSize(400, 200);
+        setSize(400, 250);
         setLocationRelativeTo(getParent());
         setLayout(new BorderLayout(10, 10));
         setResizable(false);
@@ -31,7 +30,7 @@ public class ChooseRoleDialog extends JDialog {
         mainPanel.add(titleLabel, gbc);
 
         // Панель кнопок
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
+        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 10, 10));
 
         JButton clientButton = new JButton("Клиент");
         clientButton.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -47,8 +46,16 @@ public class ChooseRoleDialog extends JDialog {
             dispose();
         });
 
+        JButton adminButton = new JButton("Администратор");
+        adminButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        adminButton.addActionListener(e -> {
+            selectedRole = "ADMIN";
+            dispose();
+        });
+
         buttonPanel.add(clientButton);
         buttonPanel.add(mechanicButton);
+        buttonPanel.add(adminButton);
 
         gbc.gridy = 1;
         mainPanel.add(buttonPanel, gbc);

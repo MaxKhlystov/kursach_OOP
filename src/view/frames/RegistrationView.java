@@ -27,7 +27,7 @@ public class RegistrationView extends JFrame {
     }
 
     private void initializeUI() {
-        setSize(450, 500);
+        setSize(450, 400);
         setLocationRelativeTo(null);
         setResizable(false);
 

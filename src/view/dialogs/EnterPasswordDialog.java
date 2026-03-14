@@ -6,10 +6,13 @@ import java.awt.*;
 public class EnterPasswordDialog extends JDialog {
     private boolean success = false;
     private JPasswordField passwordField;
-    private static final String MECHANIC_PASSWORD = "MEHANIK"; // Константа пароля
+    private String role;
+    private static final String MECHANIC_PASSWORD = "MEHANIK";
+    private static final String ADMIN_PASSWORD = "ADMIN";
 
-    public EnterPasswordDialog(JFrame parent) {
+    public EnterPasswordDialog(JFrame parent, String role) {
         super(parent, "Проверка доступа", true);
+        this.role = role;
         initializeUI();
     }
 
@@ -28,7 +31,12 @@ public class EnterPasswordDialog extends JDialog {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
-        JLabel infoLabel = new JLabel("Введите пароль для регистрации как механик");
+
+        String message = role.equals("ADMIN") ?
+                "Введите пароль для регистрации как администратор" :
+                "Введите пароль для регистрации как механик";
+
+        JLabel infoLabel = new JLabel(message);
         infoLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         mainPanel.add(infoLabel, gbc);
 
@@ -64,7 +72,11 @@ public class EnterPasswordDialog extends JDialog {
 
     private void checkPassword() {
         String enteredPassword = new String(passwordField.getPassword());
-        if (MECHANIC_PASSWORD.equals(enteredPassword)) {
+
+        if (role.equals("ADMIN") && ADMIN_PASSWORD.equals(enteredPassword)) {
+            success = true;
+            dispose();
+        } else if (role.equals("MECHANIC") && MECHANIC_PASSWORD.equals(enteredPassword)) {
             success = true;
             dispose();
         } else {

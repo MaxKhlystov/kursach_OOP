@@ -10,4 +10,5 @@ public interface IRepairDAO {
     boolean updateRepairStatus(int repairId, String status);
     boolean completeRepair(int repairId);
     Repair getRepairById(int repairId);
+    boolean deleteRepair(int repairId);
 }

@@ -16,7 +16,7 @@ public class NotificationDAO implements INotificationDAO {
         String sql = "INSERT INTO notifications (user_id, message) VALUES (?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, notification.getUserId());
             pstmt.setString(2, notification.getMessage());
@@ -24,9 +24,12 @@ public class NotificationDAO implements INotificationDAO {
             int result = pstmt.executeUpdate();
 
             if (result > 0) {
-                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                String idSql = "SELECT last_insert_rowid() as id";
+                try (Statement stmt = conn.createStatement();
+                     ResultSet rs = stmt.executeQuery(idSql)) {
                     if (rs.next()) {
-                        notification.setId(rs.getInt(1));
+                        notification.setId(rs.getInt("id"));
+                        logger.info("Уведомление добавлено с ID: " + notification.getId());
                     }
                 }
             }
@@ -36,6 +39,7 @@ public class NotificationDAO implements INotificationDAO {
 
         } catch (SQLException e) {
             logger.severe("Ошибка добавления уведомления: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -56,6 +60,24 @@ public class NotificationDAO implements INotificationDAO {
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения уведомлений: " + e.getMessage());
+        }
+        return notifications;
+    }
+
+    @Override
+    public List<Notification> getAllNotifications() {
+        List<Notification> notifications = new ArrayList<>();
+        String sql = "SELECT * FROM notifications ORDER BY created_at DESC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                notifications.add(extractNotificationFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            logger.severe("Ошибка получения всех уведомлений: " + e.getMessage());
         }
         return notifications;
     }
@@ -95,6 +117,24 @@ public class NotificationDAO implements INotificationDAO {
             logger.severe("Ошибка получения количества непрочитанных уведомлений: " + e.getMessage());
         }
         return 0;
+    }
+
+    @Override
+    public boolean deleteNotification(int notificationId) {
+        String sql = "DELETE FROM notifications WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, notificationId);
+            int result = pstmt.executeUpdate();
+            logger.info("Уведомление удалено ID: " + notificationId + ", результат: " + result);
+            return result > 0;
+
+        } catch (SQLException e) {
+            logger.severe("Ошибка удаления уведомления: " + e.getMessage());
+            return false;
+        }
     }
 
     private Notification extractNotificationFromResultSet(ResultSet rs) throws SQLException {

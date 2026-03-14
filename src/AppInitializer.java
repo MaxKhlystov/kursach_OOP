@@ -2,6 +2,7 @@ import controller.AuthController;
 import view.frames.LoginView;
 import view.frames.RegistrationView;
 import model.DatabaseConnection;
+import model.User;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -86,16 +87,21 @@ public class AppInitializer {
         loginView.setLoginListener(e -> {
             String emailOrPhone = loginView.getEmailOrPhone();
             String password = loginView.getPassword();
+            String selectedRole = loginView.getSelectedRole();
 
             if (emailOrPhone.isEmpty() || password.isEmpty()) {
                 loginView.showError("Заполните все поля");
                 return;
             }
 
-            authController.handleLogin(emailOrPhone, password);
+            User user = authController.handleLogin(emailOrPhone, password);
+            if (user != null && !user.getRole().equals(selectedRole)) {
+                loginView.showError("Вы вошли как " + user.getRole() +
+                        ", но выбрали роль " + selectedRole + ". Пожалуйста, выберите правильную роль.");
+                authController.handleLogout();
+            }
         });
 
-        // Изменяем: теперь вызываем startRegistration вместо прямого показа
         loginView.setRegisterListener(e -> authController.startRegistration());
 
         loginView.setExitListener(e -> {

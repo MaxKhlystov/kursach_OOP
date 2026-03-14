@@ -16,7 +16,7 @@ public class RepairDAO implements IRepairDAO {
         String sql = "INSERT INTO repairs (car_id, description, status, cost, start_date, mechanic_id) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, repair.getCarId());
             pstmt.setString(2, repair.getDescription());
@@ -28,9 +28,12 @@ public class RepairDAO implements IRepairDAO {
             int result = pstmt.executeUpdate();
 
             if (result > 0) {
-                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                String idSql = "SELECT last_insert_rowid() as id";
+                try (Statement stmt = conn.createStatement();
+                     ResultSet rs = stmt.executeQuery(idSql)) {
                     if (rs.next()) {
-                        repair.setId(rs.getInt(1));
+                        repair.setId(rs.getInt("id"));
+                        logger.info("Ремонт добавлен с ID: " + repair.getId());
                     }
                 }
             }
@@ -40,6 +43,7 @@ public class RepairDAO implements IRepairDAO {
 
         } catch (SQLException e) {
             logger.severe("Ошибка добавления ремонта: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -139,6 +143,24 @@ public class RepairDAO implements IRepairDAO {
             logger.severe("Ошибка получения ремонта: " + e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public boolean deleteRepair(int repairId) {
+        String sql = "DELETE FROM repairs WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, repairId);
+            int result = pstmt.executeUpdate();
+            logger.info("Ремонт удален ID: " + repairId + ", результат: " + result);
+            return result > 0;
+
+        } catch (SQLException e) {
+            logger.severe("Ошибка удаления ремонта: " + e.getMessage());
+            return false;
+        }
     }
 
     private Repair extractRepairFromResultSet(ResultSet rs) throws SQLException {

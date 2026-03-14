@@ -20,4 +20,5 @@ public interface IUserDAO {
     boolean updateUser(User user);
     boolean updatePassword(int userId, String newPassword);
     User getUserById(int userId);
+    boolean deleteUser(int userId);
 }

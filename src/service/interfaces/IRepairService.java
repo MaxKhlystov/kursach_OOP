@@ -11,4 +11,5 @@ public interface IRepairService {
     boolean moveToNextStatus(int repairId);
     boolean completeRepair(int repairId);
     Repair getRepairById(int repairId);
+    boolean deleteRepair(int repairId);
 }

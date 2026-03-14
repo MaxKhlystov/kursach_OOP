@@ -8,4 +8,7 @@ public interface IUserService {
     boolean updateUser(User user);
     User getUserById(int userId);
     List<User> getClients();
+    User findByEmailOrPhone(String emailOrPhone);
+    List<User> getAllUsers();
+    boolean deleteUser(int userId);
 }

@@ -135,20 +135,39 @@ public class ClientView extends JFrame {
         systemMenu.getItem(0).addActionListener(e -> showProfileDialog());
         systemMenu.getItem(2).addActionListener(e -> controller.handleLogout());
         systemMenu.getItem(3).addActionListener(e -> System.exit(0));
-        carMenu.getItem(0).addActionListener(e -> showAddCarDialog());
-        carMenu.getItem(1).addActionListener(e -> controller.handleViewCars());
+
+        // ВАЖНО: Проверяем, что пункты меню существуют
+        if (carMenu.getItemCount() > 0) {
+            carMenu.getItem(0).addActionListener(e -> {
+                System.out.println("=== Меню: Добавить автомобиль нажато ===");
+                showAddCarDialog();
+            });
+            carMenu.getItem(1).addActionListener(e -> controller.handleViewCars());
+        } else {
+            System.out.println("=== ОШИБКА: carMenu не содержит пунктов ===");
+        }
+
         repairMenu.getItem(0).addActionListener(e -> controller.handleViewRepairs());
         notificationMenu.getItem(0).addActionListener(e -> controller.handleViewNotifications());
         helpMenu.getItem(0).addActionListener(e -> controller.handleShowUserGuide());
         helpMenu.getItem(2).addActionListener(e -> controller.handleShowAbout());
 
         JPanel buttonPanel = (JPanel) getContentPane().getComponent(0);
-        ((JButton) buttonPanel.getComponent(0)).addActionListener(e -> showProfileDialog());
-        ((JButton) buttonPanel.getComponent(1)).addActionListener(e -> showAddCarDialog());
-        ((JButton) buttonPanel.getComponent(2)).addActionListener(e -> controller.handleViewCars());
-        ((JButton) buttonPanel.getComponent(3)).addActionListener(e -> controller.handleViewRepairs());
-        ((JButton) buttonPanel.getComponent(4)).addActionListener(e -> controller.handleViewNotifications());
-        ((JButton) buttonPanel.getComponent(5)).addActionListener(e -> controller.handleLogout());
+
+        // Проверяем, что кнопки существуют
+        if (buttonPanel.getComponentCount() > 1) {
+            ((JButton) buttonPanel.getComponent(0)).addActionListener(e -> showProfileDialog());
+            ((JButton) buttonPanel.getComponent(1)).addActionListener(e -> {
+                System.out.println("=== Кнопка: Добавить авто нажата ===");
+                showAddCarDialog();
+            });
+            ((JButton) buttonPanel.getComponent(2)).addActionListener(e -> controller.handleViewCars());
+            ((JButton) buttonPanel.getComponent(3)).addActionListener(e -> controller.handleViewRepairs());
+            ((JButton) buttonPanel.getComponent(4)).addActionListener(e -> controller.handleViewNotifications());
+            ((JButton) buttonPanel.getComponent(5)).addActionListener(e -> controller.handleLogout());
+        } else {
+            System.out.println("=== ОШИБКА: buttonPanel не содержит достаточно кнопок ===");
+        }
     }
 
     public void displayWelcome(int unreadCount) {
@@ -267,7 +286,18 @@ public class ClientView extends JFrame {
     }
 
     private void showAddCarDialog() {
-        new AddCarDialog(this, controller);
+        System.out.println("=== ОТЛАДКА: showAddCarDialog вызван ===");
+        try {
+            AddCarDialog dialog = new AddCarDialog(this, controller);
+            dialog.setVisible(true);
+            System.out.println("=== Диалог открыт ===");
+        } catch (Exception e) {
+            System.out.println("=== ОШИБКА при открытии диалога: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Ошибка при открытии диалога: " + e.getMessage(),
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void showView() {

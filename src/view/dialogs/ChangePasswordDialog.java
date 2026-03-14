@@ -12,7 +12,6 @@ public class ChangePasswordDialog extends JDialog {
     private JPasswordField oldPasswordField;
     private JPasswordField newPasswordField;
     private JPasswordField confirmPasswordField;
-    private boolean success = false;
 
     public ChangePasswordDialog(JFrame parent, User user, Object controller) {
         super(parent, "Смена пароля", true);
@@ -32,14 +31,16 @@ public class ChangePasswordDialog extends JDialog {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Заголовок
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
-
         JLabel titleLabel = new JLabel("Смена пароля", JLabel.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         mainPanel.add(titleLabel, gbc);
 
+        // Текущий пароль
         gbc.gridy = 1;
         gbc.gridwidth = 1;
         gbc.weightx = 0.3;
@@ -50,6 +51,7 @@ public class ChangePasswordDialog extends JDialog {
         oldPasswordField = new JPasswordField(15);
         mainPanel.add(oldPasswordField, gbc);
 
+        // Новый пароль
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.3;
@@ -60,6 +62,7 @@ public class ChangePasswordDialog extends JDialog {
         newPasswordField = new JPasswordField(15);
         mainPanel.add(newPasswordField, gbc);
 
+        // Подтверждение
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.weightx = 0.3;
@@ -84,12 +87,10 @@ public class ChangePasswordDialog extends JDialog {
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
-        gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(buttonPanel, gbc);
 
         add(mainPanel, BorderLayout.CENTER);
-        setVisible(true);
     }
 
     private void onChangePassword() {
@@ -127,7 +128,7 @@ public class ChangePasswordDialog extends JDialog {
             return;
         }
 
-        // Вызов соответствующего контроллера
+        boolean success = false;
         if (controller instanceof ClientController) {
             success = ((ClientController) controller).handleChangePassword(oldPassword, newPassword);
         } else if (controller instanceof MechanicController) {
@@ -135,12 +136,7 @@ public class ChangePasswordDialog extends JDialog {
         }
 
         if (success) {
-            JOptionPane.showMessageDialog(this, "Пароль успешно изменен", "Успех", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         }
-    }
-
-    public boolean isSuccess() {
-        return success;
     }
 }

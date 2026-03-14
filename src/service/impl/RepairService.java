@@ -122,12 +122,31 @@ public class RepairService implements IRepairService {
             if (car != null) {
                 String carInfo = car.getBrand() + " " + car.getModel() + " (" + car.getLicensePlate() + ")";
                 String message = formatStatusMessage(carInfo, status);
+
+                logger.info("Отправка уведомления клиенту " + car.getOwnerId() +
+                        " о смене статуса ремонта на " + status);
+
                 notificationService.addNotification(car.getOwnerId(), message);
-                logger.info("Уведомление отправлено клиенту " + car.getOwnerId() + " о смене статуса: " + status);
+
+                int unreadCount = notificationService.getUnreadCount(car.getOwnerId());
+                logger.info("После отправки у пользователя " + car.getOwnerId() +
+                        " непрочитанных уведомлений: " + unreadCount);
+            } else {
+                logger.warning("Автомобиль не найден для ремонта ID: " + repair.getId());
             }
         } catch (Exception e) {
             logger.severe("Ошибка отправки уведомления: " + e.getMessage());
+            e.printStackTrace();
         }
+    }
+
+    @Override
+    public boolean deleteRepair(int repairId) {
+        boolean success = repairDAO.deleteRepair(repairId);
+        if (success) {
+            logger.info("Ремонт удален ID: " + repairId);
+        }
+        return success;
     }
 
     private String formatStatusMessage(String carInfo, String status) {

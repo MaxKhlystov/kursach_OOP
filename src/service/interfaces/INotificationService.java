@@ -8,4 +8,6 @@ public interface INotificationService {
     boolean markNotificationAsRead(int notificationId);
     int getUnreadCount(int userId);
     void addNotification(int userId, String message);
+    List<Notification> getAllNotifications();
+    boolean deleteNotification(int notificationId);
 }

@@ -59,6 +59,13 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public List<User> getAllUsers() {
+        List<User> users = userDAO.getAllUsers();
+        logger.info("Получены все пользователи: " + users.size() + " шт.");
+        return users;
+    }
+
+    @Override
     public User getUserById(int userId) {
         User user = userDAO.getUserById(userId);
         if (user != null) {
@@ -67,6 +74,23 @@ public class UserService implements IUserService {
             logger.warning("Пользователь не найден ID: " + userId);
         }
         return user;
+    }
+
+    @Override
+    public User findByEmailOrPhone(String emailOrPhone) {
+        if (emailOrPhone == null || emailOrPhone.trim().isEmpty()) {
+            return null;
+        }
+        return userDAO.findByEmailOrPhone(emailOrPhone);
+    }
+
+    @Override
+    public boolean deleteUser(int userId) {
+        boolean success = userDAO.deleteUser(userId);
+        if (success) {
+            logger.info("Пользователь удален ID: " + userId);
+        }
+        return success;
     }
 
     @Override

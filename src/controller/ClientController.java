@@ -71,13 +71,23 @@ public class ClientController {
     }
 
     public void handleAddCar(String brand, String model, int year, String vin, String licensePlate) {
+        System.out.println("=== ОТЛАДКА: handleAddCar ===");
+        System.out.println("brand: " + brand);
+        System.out.println("model: " + model);
+        System.out.println("year: " + year);
+        System.out.println("vin: " + vin);
+        System.out.println("licensePlate: " + licensePlate);
+        System.out.println("ownerId: " + currentUser.getId());
+
         Car car = new Car(brand, model, year, vin, licensePlate, currentUser.getId());
         boolean success = carService.addCar(car);
 
         if (success) {
+            System.out.println("Успех! Автомобиль добавлен с ID: " + car.getId());
             view.showSuccess("Автомобиль добавлен успешно!");
             handleViewCars();
         } else {
+            System.out.println("ОШИБКА! Автомобиль не добавлен");
             view.showError("Ошибка при добавлении автомобиля");
         }
     }

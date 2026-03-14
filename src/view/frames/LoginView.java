@@ -5,11 +5,12 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class LoginView extends JFrame {
-    private JTextField emailPhoneField;  // Переименовано с usernameField
+    private JTextField emailPhoneField;
     private JPasswordField passwordField;
+    private JComboBox<String> roleComboBox; // Добавляем комбобокс
     private JButton loginButton;
     private JButton registerButton;
-    private JButton exitButton;  // Новая кнопка
+    private JButton exitButton;
 
     public LoginView() {
         initializeUI();
@@ -18,7 +19,7 @@ public class LoginView extends JFrame {
     private void initializeUI() {
         setTitle("Автосервис - Вход");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(400, 250);
+        setSize(400, 300);
         setLocationRelativeTo(null);
         setResizable(false);
 
@@ -29,18 +30,48 @@ public class LoginView extends JFrame {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        JPanel formPanel = new JPanel(new GridLayout(4, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        formPanel.add(new JLabel("Email или телефон:"));
-        emailPhoneField = new JTextField();
-        formPanel.add(emailPhoneField);
+        // Email/телефон
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.3;
+        formPanel.add(new JLabel("Email или телефон:"), gbc);
 
-        formPanel.add(new JLabel("Пароль:"));
-        passwordField = new JPasswordField();
-        formPanel.add(passwordField);
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        emailPhoneField = new JTextField(15);
+        formPanel.add(emailPhoneField, gbc);
 
-        // Панель для трех кнопок
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 10, 0));
+        // Пароль
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0.3;
+        formPanel.add(new JLabel("Пароль:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        passwordField = new JPasswordField(15);
+        formPanel.add(passwordField, gbc);
+
+        // Роль
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 0.3;
+        formPanel.add(new JLabel("Войти как:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        String[] roles = {"Клиент", "Механик", "Администратор"};
+        roleComboBox = new JComboBox<>(roles);
+        formPanel.add(roleComboBox, gbc);
+
+        // Панель кнопок
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 10, 10));
         loginButton = new JButton("Войти");
         registerButton = new JButton("Регистрация");
         exitButton = new JButton("Выход");
@@ -49,8 +80,13 @@ public class LoginView extends JFrame {
         buttonPanel.add(registerButton);
         buttonPanel.add(exitButton);
 
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.NONE;
+        formPanel.add(buttonPanel, gbc);
+
         mainPanel.add(formPanel, BorderLayout.CENTER);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
         add(mainPanel);
     }
 
@@ -75,6 +111,16 @@ public class LoginView extends JFrame {
         return new String(passwordField.getPassword());
     }
 
+    public String getSelectedRole() {
+        String role = (String) roleComboBox.getSelectedItem();
+        switch (role) {
+            case "Клиент": return "CLIENT";
+            case "Механик": return "MECHANIC";
+            case "Администратор": return "ADMIN";
+            default: return "CLIENT";
+        }
+    }
+
     public void showView() {
         setVisible(true);
     }
@@ -90,5 +136,6 @@ public class LoginView extends JFrame {
     public void clearFields() {
         emailPhoneField.setText("");
         passwordField.setText("");
+        roleComboBox.setSelectedIndex(0);
     }
 }

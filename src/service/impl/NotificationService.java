@@ -22,16 +22,26 @@ public class NotificationService implements INotificationService {
 
     @Override
     public List<Notification> getUserNotifications(int userId) {
+        logger.info("Запрос уведомлений для пользователя ID: " + userId);
         List<Notification> notifications = notificationDAO.getNotificationsByUser(userId);
-        logger.info("Получены уведомления пользователя " + userId + ": " + notifications.size() + " шт.");
+        logger.info("Получено уведомлений: " + notifications.size());
         return notifications;
     }
 
     @Override
+    public List<Notification> getAllNotifications() {
+        logger.info("Запрос всех уведомлений");
+        return notificationDAO.getAllNotifications();
+    }
+
+    @Override
     public boolean markNotificationAsRead(int notificationId) {
+        logger.info("Пометка уведомления как прочитанного: " + notificationId);
         boolean success = notificationDAO.markAsRead(notificationId);
         if (success) {
             logger.info("Уведомление помечено как прочитанное: " + notificationId);
+        } else {
+            logger.warning("Не удалось пометить уведомление: " + notificationId);
         }
         return success;
     }
@@ -39,16 +49,31 @@ public class NotificationService implements INotificationService {
     @Override
     public int getUnreadCount(int userId) {
         int count = notificationDAO.getUnreadCount(userId);
-        logger.info("Непрочитанных уведомлений у пользователя " + userId + ": " + count);
+        logger.info("Непрочитанных уведомлений для пользователя " + userId + ": " + count);
         return count;
     }
 
     @Override
     public void addNotification(int userId, String message) {
+        logger.info("Добавление уведомления для пользователя: " + userId);
         Notification notification = new Notification(userId, message);
         boolean success = notificationDAO.addNotification(notification);
         if (success) {
             logger.info("Уведомление добавлено для пользователя: " + userId);
+        } else {
+            logger.warning("Ошибка добавления уведомления для пользователя: " + userId);
         }
+    }
+
+    @Override
+    public boolean deleteNotification(int notificationId) {
+        logger.info("Удаление уведомления ID: " + notificationId);
+        boolean success = notificationDAO.deleteNotification(notificationId);
+        if (success) {
+            logger.info("Уведомление удалено ID: " + notificationId);
+        } else {
+            logger.warning("Не удалось удалить уведомление ID: " + notificationId);
+        }
+        return success;
     }
 }
