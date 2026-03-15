@@ -30,10 +30,6 @@ public class UserService implements IUserService {
             return "Номер телефона уже используется другим пользователем";
         }
 
-        if (userDAO.fullNameExistsForOtherUser(user.getFullName(), user.getId())) {
-            return "ФИО уже используется другим пользователем";
-        }
-
         return null;
     }
 

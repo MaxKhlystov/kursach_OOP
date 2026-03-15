@@ -64,18 +64,27 @@ public class ClientController {
         }
     }
 
-    public void handleUpdateProfile(String email, String phone, String fullName) {
+    public boolean handleUpdateProfile(String email, String phone, String fullName) {
+        String oldEmail = currentUser.getEmail();
+        String oldPhone = currentUser.getPhone();
+        String oldFullName = currentUser.getFullName();
+
         currentUser.setEmail(email);
         currentUser.setPhone(phone);
         currentUser.setFullName(fullName);
 
         boolean success = userService.updateUser(currentUser);
+
         if (success) {
             view.showSuccess("Данные успешно обновлены!");
             view.updateProfileInfo(currentUser);
         } else {
+            currentUser.setEmail(oldEmail);
+            currentUser.setPhone(oldPhone);
+            currentUser.setFullName(oldFullName);
             view.showError("Ошибка обновления данных. Возможно, данные уже используются.");
         }
+        return success;
     }
 
     public boolean handleChangePassword(String oldPassword, String newPassword) {

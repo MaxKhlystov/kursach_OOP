@@ -215,15 +215,31 @@ public class UserDAO implements IUserDAO {
     @Override
     public List<User> getUsersByRole(String role) {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT u.* FROM users u " +
-                "JOIN user_roles ur ON u.id = ur.user_id " +
-                "JOIN roles r ON ur.role_id = r.id " +
-                "WHERE r.name = ? ORDER BY u.full_name";
+
+        String sql;
+        if ("CLIENT".equals(role)) {
+            sql = "SELECT u.* FROM users u " +
+                    "WHERE u.id IN (SELECT user_id FROM user_roles ur " +
+                    "               JOIN roles r ON ur.role_id = r.id " +
+                    "               WHERE r.name = 'CLIENT') " +
+                    "AND u.id NOT IN (SELECT user_id FROM user_roles ur " +
+                    "                  JOIN roles r ON ur.role_id = r.id " +
+                    "                  WHERE r.name = 'ADMIN') " +
+                    "ORDER BY u.full_name";
+        } else {
+            sql = "SELECT u.* FROM users u " +
+                    "JOIN user_roles ur ON u.id = ur.user_id " +
+                    "JOIN roles r ON ur.role_id = r.id " +
+                    "WHERE r.name = ? ORDER BY u.full_name";
+        }
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, role);
+            if (!"CLIENT".equals(role)) {
+                pstmt.setString(1, role);
+            }
+
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {

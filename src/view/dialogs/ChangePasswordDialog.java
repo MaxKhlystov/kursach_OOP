@@ -18,6 +18,7 @@ public class ChangePasswordDialog extends JDialog {
         this.user = user;
         this.controller = controller;
         initializeUI();
+        clearFields(); // ← Очищаем поля при создании
     }
 
     private void initializeUI() {
@@ -32,6 +33,7 @@ public class ChangePasswordDialog extends JDialog {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Заголовок
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -39,6 +41,7 @@ public class ChangePasswordDialog extends JDialog {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         mainPanel.add(titleLabel, gbc);
 
+        // Текущий пароль
         gbc.gridy = 1;
         gbc.gridwidth = 1;
         gbc.weightx = 0.3;
@@ -49,6 +52,7 @@ public class ChangePasswordDialog extends JDialog {
         oldPasswordField = new JPasswordField(15);
         mainPanel.add(oldPasswordField, gbc);
 
+        // Новый пароль
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.3;
@@ -59,6 +63,7 @@ public class ChangePasswordDialog extends JDialog {
         newPasswordField = new JPasswordField(15);
         mainPanel.add(newPasswordField, gbc);
 
+        // Подтверждение
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.weightx = 0.3;
@@ -69,6 +74,7 @@ public class ChangePasswordDialog extends JDialog {
         confirmPasswordField = new JPasswordField(15);
         mainPanel.add(confirmPasswordField, gbc);
 
+        // Панель кнопок
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton saveButton = new JButton("Сохранить");
         JButton cancelButton = new JButton("Отмена");
@@ -88,6 +94,12 @@ public class ChangePasswordDialog extends JDialog {
         add(mainPanel, BorderLayout.CENTER);
     }
 
+    private void clearFields() {
+        oldPasswordField.setText("");
+        newPasswordField.setText("");
+        confirmPasswordField.setText("");
+    }
+
     private void onChangePassword() {
         String oldPassword = new String(oldPasswordField.getPassword());
         String newPassword = new String(newPasswordField.getPassword());
@@ -100,21 +112,25 @@ public class ChangePasswordDialog extends JDialog {
 
         if (!oldPassword.equals(user.getPassword())) {
             JOptionPane.showMessageDialog(this, "Неверный текущий пароль", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            clearFields();
             return;
         }
 
         if (newPassword.equals(oldPassword)) {
             JOptionPane.showMessageDialog(this, "Новый пароль должен отличаться от текущего", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            clearFields();
             return;
         }
 
         if (!newPassword.equals(confirmPassword)) {
             JOptionPane.showMessageDialog(this, "Новый пароль и подтверждение не совпадают", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            clearFields();
             return;
         }
 
         if (newPassword.length() < 3) {
             JOptionPane.showMessageDialog(this, "Пароль должен содержать минимум 3 символа", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            clearFields();
             return;
         }
 
@@ -127,6 +143,8 @@ public class ChangePasswordDialog extends JDialog {
 
         if (success) {
             dispose();
+        } else {
+            clearFields();
         }
     }
 }

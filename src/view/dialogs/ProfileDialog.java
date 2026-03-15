@@ -19,6 +19,8 @@ public class ProfileDialog extends JDialog {
         this.user = user;
         this.controller = controller;
         initializeUI();
+        reloadData();
+        setVisible(true);
     }
 
     private void initializeUI() {
@@ -47,7 +49,7 @@ public class ProfileDialog extends JDialog {
 
         gbc.gridx = 1;
         gbc.weightx = 0.7;
-        fullNameField = new JTextField(user.getFullName(), 15);
+        fullNameField = new JTextField(15);
         mainPanel.add(fullNameField, gbc);
 
         gbc.gridx = 0;
@@ -57,7 +59,7 @@ public class ProfileDialog extends JDialog {
 
         gbc.gridx = 1;
         gbc.weightx = 0.7;
-        phoneField = new JTextField(user.getPhone(), 15);
+        phoneField = new JTextField(15);
         mainPanel.add(phoneField, gbc);
 
         gbc.gridx = 0;
@@ -67,7 +69,7 @@ public class ProfileDialog extends JDialog {
 
         gbc.gridx = 1;
         gbc.weightx = 0.7;
-        emailField = new JTextField(user.getEmail(), 15);
+        emailField = new JTextField(15);
         mainPanel.add(emailField, gbc);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
@@ -90,7 +92,12 @@ public class ProfileDialog extends JDialog {
         mainPanel.add(buttonPanel, gbc);
 
         add(mainPanel, BorderLayout.CENTER);
-        setVisible(true);
+    }
+
+    private void reloadData() {
+        fullNameField.setText(user.getFullName());
+        phoneField.setText(user.getPhone());
+        emailField.setText(user.getEmail());
     }
 
     private void onSave() {
@@ -98,33 +105,57 @@ public class ProfileDialog extends JDialog {
         String phone = phoneField.getText().trim();
         String email = emailField.getText().trim().toLowerCase();
 
+        // Проверка на те же данные
+        if (fullName.equals(user.getFullName()) &&
+                phone.equals(user.getPhone()) &&
+                email.equals(user.getEmail())) {
+            JOptionPane.showMessageDialog(this,
+                    "Нет изменений для сохранения",
+                    "Информация",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
         String nameError = InputValidator.validateName(fullName);
         if (nameError != null) {
             JOptionPane.showMessageDialog(this, nameError, "Ошибка", JOptionPane.ERROR_MESSAGE);
+            reloadData();
             return;
         }
 
         String phoneError = InputValidator.validatePhone(phone);
         if (phoneError != null) {
             JOptionPane.showMessageDialog(this, phoneError, "Ошибка", JOptionPane.ERROR_MESSAGE);
+            reloadData();
             return;
         }
 
         String emailError = InputValidator.validateEmail(email);
         if (emailError != null) {
             JOptionPane.showMessageDialog(this, emailError, "Ошибка", JOptionPane.ERROR_MESSAGE);
+            reloadData();
             return;
         }
 
+        boolean success = false;
         if (controller instanceof ClientController) {
-            ((ClientController) controller).handleUpdateProfile(email, phone, fullName);
+            success = ((ClientController) controller).handleUpdateProfile(email, phone, fullName);
         } else if (controller instanceof MechanicController) {
-            ((MechanicController) controller).handleUpdateProfile(email, phone, fullName);
+            success = ((MechanicController) controller).handleUpdateProfile(email, phone, fullName);
         }
-        dispose();
+
+        if (success) {
+            user.setFullName(fullName);
+            user.setPhone(phone);
+            user.setEmail(email);
+            dispose();
+        } else {
+            reloadData();
+        }
     }
 
     private void onChangePassword() {
-        new ChangePasswordDialog((JFrame) getParent(), user, controller);
+        ChangePasswordDialog dialog = new ChangePasswordDialog((JFrame) getParent(), user, controller);
+        dialog.setVisible(true);
     }
 }

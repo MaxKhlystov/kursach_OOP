@@ -78,6 +78,18 @@ public class LinkAccountDialog extends JDialog {
         foundUser = userService.findByEmailOrPhone(searchTerm);
 
         if (foundUser != null) {
+            // ПРОВЕРЯЕМ, ЕСТЬ ЛИ УЖЕ ТАКАЯ РОЛЬ
+            if (foundUser.hasRole(targetRole)) {
+                String roleName = targetRole.equals("CLIENT") ? "КЛИЕНТ" :
+                        targetRole.equals("MECHANIC") ? "МЕХАНИК" : "АДМИНИСТРАТОР";
+                JOptionPane.showMessageDialog(this,
+                        "У этого пользователя уже есть роль " + roleName,
+                        "Ошибка", JOptionPane.WARNING_MESSAGE);
+                searchField.setText("");
+                foundUser = null;
+                return;
+            }
+
             String message = String.format(
                     "Найден пользователь:\n\n" +
                             "ФИО: %s\n" +
