@@ -1,23 +1,23 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class User {
     private int id;
     private String fullName;
     private String password;
-    private String role;
     private String email;
     private String phone;
-    private int linkedUserId;
+    private List<String> roles = new ArrayList<>(); // Теперь список ролей
 
     public User() {}
 
-    public User(String fullName, String password, String role, String email, String phone) {
+    public User(String fullName, String password, String email, String phone) {
         this.fullName = fullName;
         this.password = password;
-        this.role = role;
         this.email = email;
         this.phone = phone;
-        this.linkedUserId = 0;
     }
 
     public int getId() { return id; }
@@ -26,14 +26,15 @@ public class User {
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-    public int getLinkedUserId() { return linkedUserId; }
-    public void setLinkedUserId(int linkedUserId) { this.linkedUserId = linkedUserId; }
+
+    public List<String> getRoles() { return roles; }
+    public void setRoles(List<String> roles) { this.roles = roles; }
+    public void addRole(String role) { this.roles.add(role); }
+    public boolean hasRole(String role) { return roles.contains(role); }
 
     @Override
     public String toString() {

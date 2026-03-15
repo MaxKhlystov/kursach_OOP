@@ -33,7 +33,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public String validateRegistration(User user) {
+    public String validateRegistration(User user, String role) {
         if (user == null) {
             return "Невалидные данные пользователя";
         }
@@ -65,18 +65,34 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public boolean register(User user) {
-        String validationError = validateRegistration(user);
+    public boolean register(User user, String role) {
+        String validationError = validateRegistration(user, role);
         if (validationError != null) {
             logger.warning("Ошибка валидации регистрации: " + validationError);
             return false;
         }
 
+        user.addRole(role); // Добавляем роль перед созданием
         boolean success = userDAO.createUser(user);
         if (success) {
-            logger.info("Пользователь зарегистрирован: " + user.getFullName());
+            logger.info("Пользователь зарегистрирован: " + user.getFullName() + " с ролью " + role);
         } else {
             logger.severe("Ошибка регистрации: " + user.getFullName());
+        }
+        return success;
+    }
+
+    @Override
+    public boolean addRoleToExistingUser(User existingUser, String newRole) {
+        if (existingUser.hasRole(newRole)) {
+            logger.warning("У пользователя уже есть роль " + newRole);
+            return false;
+        }
+
+        boolean success = userDAO.addRoleToUser(existingUser.getId(), newRole);
+        if (success) {
+            existingUser.addRole(newRole);
+            logger.info("Роль " + newRole + " добавлена пользователю " + existingUser.getFullName());
         }
         return success;
     }

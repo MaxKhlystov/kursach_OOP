@@ -158,7 +158,7 @@ public class MechanicController {
     }
 
     public List<User> getClients() {
-        return userService.getClients();
+        return userService.getUsersByRole("CLIENT");
     }
 
     public List<Car> getClientCars(int clientId) {

@@ -3,6 +3,8 @@ package view.frames;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import model.User;
+import java.util.List;
 
 public class LoginView extends JFrame {
     private JTextField emailPhoneField;

@@ -9,6 +9,7 @@ import view.frames.*;
 import view.dialogs.ChooseRoleDialog;
 import view.dialogs.EnterPasswordDialog;
 import view.dialogs.LinkAccountDialog;
+import view.dialogs.PasswordOnlyDialog;
 
 import java.util.logging.Logger;
 
@@ -21,8 +22,6 @@ public class AuthController {
     private MechanicView currentMechanicView;
     private AdminView currentAdminView;
     private static final Logger logger = Logger.getLogger(AuthController.class.getName());
-
-    private User pendingUser;
 
     public AuthController() {
         this.authService = new AuthService();
@@ -48,12 +47,12 @@ public class AuthController {
     }
 
     public void openDashboardWithRoleCheck(User user, String selectedRole) {
-        if (user.getRole().equals(selectedRole)) {
+        if (user.hasRole(selectedRole)) {
             loginView.hideView();
-            openDashboard(user);
+            openDashboard(user, selectedRole);
         } else {
-            loginView.showError("Вы вошли как " + user.getRole() +
-                    ", но выбрали роль " + selectedRole + ". Пожалуйста, выберите правильную роль.");
+            loginView.showError("У вас нет роли " + selectedRole +
+                    ". Доступные роли: " + String.join(", ", user.getRoles()));
         }
     }
 
@@ -84,24 +83,19 @@ public class AuthController {
             return;
         }
 
-        User user = new User(fullName, password, role, email, phone);
+        User user = new User(fullName, password, email, phone);
 
-        if (pendingUser != null) {
-            user.setLinkedUserId(pendingUser.getId());
-        }
-
-        String validationError = authService.validateRegistration(user);
+        String validationError = authService.validateRegistration(user, role);
         if (validationError != null) {
             registrationView.showError(validationError);
             return;
         }
 
-        boolean success = authService.register(user);
+        boolean success = authService.register(user, role);
 
         if (success) {
             registrationView.showSuccess("Регистрация прошла успешно!");
             registrationView.hideView();
-            pendingUser = null;
             loginView.clearFields();
             loginView.showView();
         } else {
@@ -110,13 +104,67 @@ public class AuthController {
     }
 
     public void handleLinkAccount() {
-        LinkAccountDialog linkDialog = new LinkAccountDialog(registrationView);
+        String targetRole = registrationView.getRole();
+        LinkAccountDialog linkDialog = new LinkAccountDialog(registrationView, targetRole);
         linkDialog.setVisible(true);
 
         if (linkDialog.isSuccess()) {
-            pendingUser = linkDialog.getFoundUser();
-            registrationView.showSuccess("Аккаунт будет связан с пользователем " + pendingUser.getFullName());
+            User existingUser = linkDialog.getFoundUser();
+
+            // Проверяем, есть ли уже такая роль
+            if (existingUser.hasRole(targetRole)) {
+                registrationView.showError("У этого пользователя уже есть роль " + targetRole);
+                return;
+            }
+
+            // Запоминаем пользователя и показываем диалог для пароля
+            pendingUser = existingUser;
+            showPasswordForExistingUser(targetRole);
         }
+    }
+
+    private User pendingUser; // временно храним пользователя для добавления роли
+
+    private void showPasswordForExistingUser(String newRole) {
+        PasswordOnlyDialog passwordDialog = new PasswordOnlyDialog(registrationView);
+
+        passwordDialog.setOkListener(e -> {
+            String password = passwordDialog.getPassword();
+
+            if (password.length() < 3) {
+                passwordDialog.showError("Пароль должен содержать минимум 3 символа");
+                return;
+            }
+
+            // Проверяем пароль существующего пользователя
+            User authUser = authService.login(pendingUser.getEmail(), password);
+            if (authUser == null) {
+                passwordDialog.showError("Неверный пароль");
+                return;
+            }
+
+            // Добавляем новую роль существующему пользователю
+            boolean success = authService.addRoleToExistingUser(pendingUser, newRole);
+
+            if (success) {
+                passwordDialog.setSuccess(true);
+                passwordDialog.dispose();
+                registrationView.showSuccess("Роль " + newRole + " успешно добавлена!");
+                registrationView.hideView();
+                pendingUser = null;
+                loginView.clearFields();
+                loginView.showView();
+            } else {
+                passwordDialog.showError("Ошибка при добавлении роли");
+            }
+        });
+
+        passwordDialog.setCancelListener(e -> {
+            passwordDialog.dispose();
+            pendingUser = null;
+        });
+
+        passwordDialog.setVisible(true);
     }
 
     public void showRegistration() {
@@ -145,14 +193,14 @@ public class AuthController {
         loginView.showView();
     }
 
-    private void openDashboard(User user) {
-        if ("MECHANIC".equals(user.getRole())) {
+    private void openDashboard(User user, String selectedRole) {
+        if ("MECHANIC".equals(selectedRole)) {
             MechanicController mechanicController = new MechanicController(user, this);
             MechanicView mechanicView = new MechanicView(mechanicController, user);
             mechanicController.setView(mechanicView);
             currentMechanicView = mechanicView;
             mechanicView.showView();
-        } else if ("ADMIN".equals(user.getRole())) {
+        } else if ("ADMIN".equals(selectedRole)) {
             AdminController adminController = new AdminController(user, this);
             AdminView adminView = new AdminView(adminController, user);
             adminController.setView(adminView);

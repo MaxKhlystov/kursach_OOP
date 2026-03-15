@@ -13,37 +13,67 @@ public class UserDAO implements IUserDAO {
 
     @Override
     public boolean createUser(User user) {
-        String sql = "INSERT INTO users (full_name, password, role, email, phone, linked_user_id) VALUES (?, ?, ?, ?, ?, ?)";
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            conn.setAutoCommit(false);
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+            // Вставляем пользователя (БЕЗ RETURN_GENERATED_KEYS)
+            String userSql = "INSERT INTO users (full_name, password, email, phone) VALUES (?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(userSql);
             pstmt.setString(1, user.getFullName());
             pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getRole());
-            pstmt.setString(4, user.getEmail());
-            pstmt.setString(5, user.getPhone());
-            pstmt.setObject(6, user.getLinkedUserId() != 0 ? user.getLinkedUserId() : null);
+            pstmt.setString(3, user.getEmail());
+            pstmt.setString(4, user.getPhone());
+            pstmt.executeUpdate();
 
-            int result = pstmt.executeUpdate();
+            // Получаем ID последней вставленной записи через отдельный запрос
+            String idSql = "SELECT last_insert_rowid() as id";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(idSql);
 
-            if (result > 0) {
-                String idSql = "SELECT last_insert_rowid() as id";
-                try (Statement stmt = conn.createStatement();
-                     ResultSet rs = stmt.executeQuery(idSql)) {
-                    if (rs.next()) {
-                        user.setId(rs.getInt("id"));
-                        logger.info("Пользователь создан с ID: " + user.getId());
-                    }
-                }
-                return true;
+            int userId;
+            if (rs.next()) {
+                userId = rs.getInt("id");
+                user.setId(userId);
+            } else {
+                conn.rollback();
+                return false;
             }
-            return false;
+
+            // Добавляем роли
+            String roleSql = "INSERT INTO user_roles (user_id, role_id) VALUES (?, (SELECT id FROM roles WHERE name = ?))";
+            pstmt = conn.prepareStatement(roleSql);
+            for (String role : user.getRoles()) {
+                pstmt.setInt(1, userId);
+                pstmt.setString(2, role);
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+
+            conn.commit();
+            logger.info("Пользователь создан с ID: " + userId);
+            return true;
 
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    logger.severe("Ошибка отката: " + ex.getMessage());
+                }
+            }
             logger.severe("Ошибка создания пользователя: " + e.getMessage());
             e.printStackTrace();
             return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException e) {
+                    logger.severe("Ошибка сброса autoCommit: " + e.getMessage());
+                }
+            }
         }
     }
 
@@ -60,7 +90,9 @@ public class UserDAO implements IUserDAO {
 
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return extractUserFromResultSet(rs);
+                User user = extractUserFromResultSet(rs);
+                loadUserRoles(conn, user); // Загружаем роли пользователя
+                return user;
             }
         } catch (SQLException e) {
             logger.severe("Ошибка аутентификации: " + e.getMessage());
@@ -80,12 +112,27 @@ public class UserDAO implements IUserDAO {
 
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return extractUserFromResultSet(rs);
+                User user = extractUserFromResultSet(rs);
+                loadUserRoles(conn, user);
+                return user;
             }
         } catch (SQLException e) {
             logger.severe("Ошибка поиска пользователя: " + e.getMessage());
         }
         return null;
+    }
+
+    private void loadUserRoles(Connection conn, User user) throws SQLException {
+        String sql = "SELECT r.name FROM roles r " +
+                "JOIN user_roles ur ON r.id = ur.role_id " +
+                "WHERE ur.user_id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, user.getId());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                user.addRole(rs.getString("name"));
+            }
+        }
     }
 
     @Override
@@ -155,7 +202,9 @@ public class UserDAO implements IUserDAO {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                users.add(extractUserFromResultSet(rs));
+                User user = extractUserFromResultSet(rs);
+                loadUserRoles(conn, user);
+                users.add(user);
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения пользователей: " + e.getMessage());
@@ -164,57 +213,62 @@ public class UserDAO implements IUserDAO {
     }
 
     @Override
-    public List<User> getClients() {
-        List<User> clients = new ArrayList<>();
-        String sql = "SELECT * FROM users WHERE role = 'CLIENT' ORDER BY full_name";
+    public List<User> getUsersByRole(String role) {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT u.* FROM users u " +
+                "JOIN user_roles ur ON u.id = ur.user_id " +
+                "JOIN roles r ON ur.role_id = r.id " +
+                "WHERE r.name = ? ORDER BY u.full_name";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, role);
+            ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                clients.add(extractUserFromResultSet(rs));
+                User user = extractUserFromResultSet(rs);
+                loadUserRoles(conn, user);
+                users.add(user);
             }
         } catch (SQLException e) {
-            logger.severe("Ошибка получения клиентов: " + e.getMessage());
+            logger.severe("Ошибка получения пользователей с ролью " + role + ": " + e.getMessage());
         }
-        return clients;
+        return users;
     }
 
     @Override
-    public List<User> getMechanics() {
-        List<User> mechanics = new ArrayList<>();
-        String sql = "SELECT * FROM users WHERE role = 'MECHANIC' ORDER BY full_name";
-
+    public boolean addRoleToUser(int userId, String role) {
+        String sql = "INSERT INTO user_roles (user_id, role_id) " +
+                "SELECT ?, id FROM roles WHERE name = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                mechanics.add(extractUserFromResultSet(rs));
-            }
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setString(2, role);
+            int result = pstmt.executeUpdate();
+            logger.info("Роль " + role + " добавлена пользователю ID: " + userId);
+            return result > 0;
         } catch (SQLException e) {
-            logger.severe("Ошибка получения механиков: " + e.getMessage());
+            logger.severe("Ошибка добавления роли: " + e.getMessage());
+            return false;
         }
-        return mechanics;
     }
 
     @Override
-    public List<User> getAdmins() {
-        List<User> admins = new ArrayList<>();
-        String sql = "SELECT * FROM users WHERE role = 'ADMIN' ORDER BY full_name";
-
+    public boolean removeRoleFromUser(int userId, String role) {
+        String sql = "DELETE FROM user_roles " +
+                "WHERE user_id = ? AND role_id = (SELECT id FROM roles WHERE name = ?)";
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                admins.add(extractUserFromResultSet(rs));
-            }
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setString(2, role);
+            int result = pstmt.executeUpdate();
+            logger.info("Роль " + role + " удалена у пользователя ID: " + userId);
+            return result > 0;
         } catch (SQLException e) {
-            logger.severe("Ошибка получения администраторов: " + e.getMessage());
+            logger.severe("Ошибка удаления роли: " + e.getMessage());
+            return false;
         }
-        return admins;
     }
 
     @Override
@@ -271,7 +325,9 @@ public class UserDAO implements IUserDAO {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                return extractUserFromResultSet(rs);
+                User user = extractUserFromResultSet(rs);
+                loadUserRoles(conn, user);
+                return user;
             }
         } catch (SQLException e) {
             logger.severe("Ошибка получения пользователя: " + e.getMessage());
@@ -302,10 +358,8 @@ public class UserDAO implements IUserDAO {
         user.setId(rs.getInt("id"));
         user.setFullName(rs.getString("full_name"));
         user.setPassword(rs.getString("password"));
-        user.setRole(rs.getString("role"));
         user.setEmail(rs.getString("email"));
         user.setPhone(rs.getString("phone"));
-        user.setLinkedUserId(rs.getObject("linked_user_id") != null ? rs.getInt("linked_user_id") : 0);
         return user;
     }
 }

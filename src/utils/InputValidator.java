@@ -3,22 +3,28 @@ package utils;
 import java.util.regex.Pattern;
 
 public class InputValidator {
+
+    // ФИО: обязательно хотя бы одна буква, могут быть пробелы и дефисы между словами
     private static final Pattern NAME_PATTERN = Pattern.compile(
             "^(?=.*[a-zA-Zа-яА-ЯёЁ])[a-zA-Zа-яА-ЯёЁ\\s-]+$"
     );
 
+    // Email: должен содержать @ и . после @
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$"
     );
 
+    // Телефон: +7 или 8, затем 10 цифр (итого 11 или 12 символов)
     private static final Pattern PHONE_PATTERN = Pattern.compile(
-            "^\\+?[0-9]+$"
+            "^(\\+7|8)[0-9]{10}$"
     );
 
+    // VIN: 17 символов, буквы и цифры (без I, O, Q)
     private static final Pattern VIN_PATTERN = Pattern.compile(
             "^[A-HJ-NPR-Z0-9]{17}$"
     );
 
+    // Госномер: буквы и цифры, формат как в РФ
     private static final Pattern LICENSE_PLATE_PATTERN = Pattern.compile(
             "^[АВЕКМНОРСТУХABEKMHOPCTYX]\\d{3}[АВЕКМНОРСТУХABEKMHOPCTYX]{2}\\d{2,3}$"
     );
@@ -35,7 +41,12 @@ public class InputValidator {
 
     public static boolean isValidPhone(String phone) {
         if (phone == null || phone.trim().isEmpty()) return false;
-        return PHONE_PATTERN.matcher(phone).matches();
+
+        // Убираем все пробелы, дефисы и скобки для проверки
+        String cleanPhone = phone.replaceAll("[\\s\\-\\(\\)]", "");
+
+        // Проверяем соответствие паттерну
+        return PHONE_PATTERN.matcher(cleanPhone).matches();
     }
 
     public static boolean isValidVin(String vin) {
@@ -68,8 +79,21 @@ public class InputValidator {
     }
 
     public static String validatePhone(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return "Введите номер телефона";
+        }
+
+        String cleanPhone = phone.replaceAll("[\\s\\-\\(\\)]", "");
+
         if (!isValidPhone(phone)) {
-            return "Телефон может содержать только цифры и знак + в начале";
+            if (cleanPhone.startsWith("+7") || cleanPhone.startsWith("8")) {
+                if (cleanPhone.length() != 12 && cleanPhone.length() != 11) {
+                    return "Номер должен содержать 11 цифр (например: +79149097719 или 89149097719)";
+                }
+                return "Номер должен начинаться с +7 или 8 и содержать 10 цифр после";
+            } else {
+                return "Номер должен начинаться с +7 или 8";
+            }
         }
         return null;
     }

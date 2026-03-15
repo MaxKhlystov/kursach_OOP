@@ -11,9 +11,11 @@ public class LinkAccountDialog extends JDialog {
     private boolean success = false;
     private final IUserService userService;
     private JTextField searchField;
+    private String targetRole;
 
-    public LinkAccountDialog(JFrame parent) {
+    public LinkAccountDialog(JFrame parent, String targetRole) {
         super(parent, "Поиск существующего аккаунта", true);
+        this.targetRole = targetRole;
         this.userService = new UserService();
         initializeUI();
     }
@@ -76,15 +78,30 @@ public class LinkAccountDialog extends JDialog {
         foundUser = userService.findByEmailOrPhone(searchTerm);
 
         if (foundUser != null) {
-            String message = String.format("Найден пользователь:\n\nФИО: %s\nТелефон: %s\nEmail: %s\n\nСвязать с этим аккаунтом?",
-                    foundUser.getFullName(), foundUser.getPhone(), foundUser.getEmail());
+            String message = String.format(
+                    "Найден пользователь:\n\n" +
+                            "ФИО: %s\n" +
+                            "Телефон: %s\n" +
+                            "Email: %s\n" +
+                            "Текущие роли: %s\n\n" +
+                            "Добавить роль %s?",
+                    foundUser.getFullName(),
+                    foundUser.getPhone(),
+                    foundUser.getEmail(),
+                    String.join(", ", foundUser.getRoles()),
+                    targetRole.equals("CLIENT") ? "КЛИЕНТ" :
+                            targetRole.equals("MECHANIC") ? "МЕХАНИК" : "АДМИНИСТРАТОР"
+            );
 
-            int result = JOptionPane.showConfirmDialog(this, message, "Пользователь найден",
-                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            int result = JOptionPane.showConfirmDialog(this, message,
+                    "Подтверждение", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
             if (result == JOptionPane.YES_OPTION) {
                 success = true;
                 dispose();
+            } else {
+                searchField.setText("");
+                foundUser = null;
             }
         } else {
             JOptionPane.showMessageDialog(this, "Пользователь не найден", "Ошибка", JOptionPane.ERROR_MESSAGE);

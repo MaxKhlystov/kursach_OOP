@@ -14,9 +14,9 @@ public interface IUserDAO {
     boolean phoneExistsForOtherUser(String phone, int userId);
     boolean fullNameExistsForOtherUser(String fullName, int userId);
     List<User> getAllUsers();
-    List<User> getClients();
-    List<User> getMechanics();
-    List<User> getAdmins();
+    List<User> getUsersByRole(String role);  // Вместо getClients, getMechanics, getAdmins
+    boolean addRoleToUser(int userId, String role);
+    boolean removeRoleFromUser(int userId, String role);
     boolean updateUser(User user);
     boolean updatePassword(int userId, String newPassword);
     User getUserById(int userId);

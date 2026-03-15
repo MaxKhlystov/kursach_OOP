@@ -115,7 +115,7 @@ public class AdminView extends JFrame {
 
     private void loadUsers() {
         List<User> users = controller.getAllUsers();
-        String[] columns = {"ID", "ФИО", "Роль", "Email", "Телефон", "Связан с ID"};
+        String[] columns = {"ID", "ФИО", "Роли", "Email", "Телефон"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -127,10 +127,9 @@ public class AdminView extends JFrame {
             model.addRow(new Object[]{
                     user.getId(),
                     user.getFullName(),
-                    user.getRole(),
+                    String.join(", ", user.getRoles()),  // ← Показываем все роли через запятую
                     user.getEmail(),
-                    user.getPhone(),
-                    user.getLinkedUserId() != 0 ? user.getLinkedUserId() : "-"
+                    user.getPhone()
             });
         }
         usersTable.setModel(model);
@@ -348,7 +347,7 @@ public class AdminView extends JFrame {
         String about = "Автосервис v3.0\n\n" +
                 "Панель администратора\n" +
                 "Текущий пользователь: " + currentUser.getFullName() + "\n" +
-                "Роль: Администратор\n\n" +
+                "Роли: " + String.join(", ", currentUser.getRoles()) + "\n\n" +
                 "Доступные операции:\n" +
                 "• Просмотр всех таблиц\n" +
                 "• Удаление записей";

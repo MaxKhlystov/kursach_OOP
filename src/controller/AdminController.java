@@ -172,6 +172,18 @@ public class AdminController {
         return false;
     }
 
+    public List<User> getClients() {
+        return userService.getUsersByRole("CLIENT");
+    }
+
+    public List<User> getMechanics() {
+        return userService.getUsersByRole("MECHANIC");
+    }
+
+    public List<User> getAdmins() {
+        return userService.getUsersByRole("ADMIN");
+    }
+
     public void handleLogout() {
         authController.handleLogout();
     }

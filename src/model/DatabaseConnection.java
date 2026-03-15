@@ -15,7 +15,6 @@ public class DatabaseConnection {
         } catch (ClassNotFoundException e) {
             logger.severe(e.getMessage());
         }
-
         initializeDatabase();
     }
 
@@ -36,20 +35,43 @@ public class DatabaseConnection {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
 
+            // Таблица пользователей (без роли)
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     full_name TEXT NOT NULL,
                     password TEXT NOT NULL,
-                    role TEXT NOT NULL CHECK(role IN ('CLIENT', 'MECHANIC', 'ADMIN')),
                     email TEXT UNIQUE NOT NULL,
                     phone TEXT UNIQUE NOT NULL,
-                    linked_user_id INTEGER,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (linked_user_id) REFERENCES users(id)
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             """);
 
+            // Таблица ролей
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS roles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL
+                )
+            """);
+
+            // Таблица связей пользователь-роль
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS user_roles (
+                    user_id INTEGER NOT NULL,
+                    role_id INTEGER NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+                    PRIMARY KEY (user_id, role_id)
+                )
+            """);
+
+            // Добавляем роли по умолчанию
+            stmt.execute("INSERT OR IGNORE INTO roles (name) VALUES ('CLIENT')");
+            stmt.execute("INSERT OR IGNORE INTO roles (name) VALUES ('MECHANIC')");
+            stmt.execute("INSERT OR IGNORE INTO roles (name) VALUES ('ADMIN')");
+
+            // Остальные таблицы без изменений
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS car_brands (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,10 +125,46 @@ public class DatabaseConnection {
                 )
             """);
 
+            createDefaultAdmin(conn);
             logger.info("Таблицы созданы успешно");
 
         } catch (SQLException e) {
             logger.severe("Ошибка инициализации БД: " + e.getMessage());
+        }
+    }
+
+    private static void createDefaultAdmin(Connection conn) {
+        String checkSql = "SELECT COUNT(*) FROM users u " +
+                "JOIN user_roles ur ON u.id = ur.user_id " +
+                "JOIN roles r ON ur.role_id = r.id " +
+                "WHERE r.name = 'ADMIN'";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(checkSql)) {
+
+            if (rs.next() && rs.getInt(1) == 0) {
+                String insertUserSql = "INSERT INTO users (full_name, password, email, phone) VALUES (?, ?, ?, ?)";
+                try (PreparedStatement pstmt = conn.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS)) {
+                    pstmt.setString(1, "Главный администратор");
+                    pstmt.setString(2, "admin123");
+                    pstmt.setString(3, "admin@autoservice.ru");
+                    pstmt.setString(4, "+70000000000");
+                    pstmt.executeUpdate();
+
+                    ResultSet rs2 = pstmt.getGeneratedKeys();
+                    if (rs2.next()) {
+                        int userId = rs2.getInt(1);
+                        String insertRoleSql = "INSERT INTO user_roles (user_id, role_id) " +
+                                "SELECT ?, id FROM roles WHERE name = 'ADMIN'";
+                        try (PreparedStatement pstmt2 = conn.prepareStatement(insertRoleSql)) {
+                            pstmt2.setInt(1, userId);
+                            pstmt2.executeUpdate();
+                        }
+                    }
+                    logger.info("Создан администратор по умолчанию");
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Ошибка создания администратора: " + e.getMessage());
         }
     }
 

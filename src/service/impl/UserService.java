@@ -81,16 +81,26 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public List<User> getUsersByRole(String role) {
+        return userDAO.getUsersByRole(role);
+    }
+
+    @Override
+    public boolean addRoleToUser(int userId, String role) {
+        return userDAO.addRoleToUser(userId, role);
+    }
+
+    @Override
+    public boolean removeRoleFromUser(int userId, String role) {
+        return userDAO.removeRoleFromUser(userId, role);
+    }
+
+    @Override
     public boolean deleteUser(int userId) {
         boolean success = userDAO.deleteUser(userId);
         if (success) {
             logger.info("Пользователь удален ID: " + userId);
         }
         return success;
-    }
-
-    @Override
-    public List<User> getClients() {
-        return userDAO.getClients();
     }
 }

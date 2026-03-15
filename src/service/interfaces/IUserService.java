@@ -7,8 +7,10 @@ public interface IUserService {
     String validateProfileUpdate(User user);
     boolean updateUser(User user);
     User getUserById(int userId);
-    List<User> getClients();
     User findByEmailOrPhone(String emailOrPhone);
     List<User> getAllUsers();
+    List<User> getUsersByRole(String role);
+    boolean addRoleToUser(int userId, String role);
+    boolean removeRoleFromUser(int userId, String role);
     boolean deleteUser(int userId);
 }
