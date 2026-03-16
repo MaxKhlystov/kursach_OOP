@@ -227,7 +227,7 @@ public class ClientView extends JFrame {
                     sb.append("   Ремонтов не найдено\n\n");
                 } else {
                     for (Repair repair : repairs) {
-                        sb.append("   📋 ").append(repair.getDescription()).append("\n")
+                        sb.append(" ").append(repair.getDescription()).append("\n")
                                 .append("      Статус: ").append(repair.getStatusText()).append("\n")
                                 .append("      Стоимость: ").append(String.format("%.2f", repair.getCost())).append(" руб.\n")
                                 .append("      Дата начала: ").append(repair.getStartDate()).append("\n");

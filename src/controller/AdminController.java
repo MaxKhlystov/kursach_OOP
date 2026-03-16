@@ -171,6 +171,32 @@ public class AdminController {
         }
         return false;
     }
+    public int getClientCarsCount(int userId) {
+        return carService.getClientCars(userId).size();
+    }
+
+    public int getMechanicRepairsCount(int userId) {
+        int count = 0;
+        List<Repair> allRepairs = repairService.getAllRepairs();
+        for (Repair r : allRepairs) {
+            if (r.getMechanicId() == userId) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public User getUserById(int userId) {
+        return userService.getUserById(userId);
+    }
+
+    public Car getCarById(int carId) {
+        return carService.getCarById(carId);
+    }
+
+    public int getModelsCountByBrand(int brandId) {
+        return modelService.getModelsByBrand(brandId).size();
+    }
 
     public List<User> getClients() {
         return userService.getUsersByRole("CLIENT");

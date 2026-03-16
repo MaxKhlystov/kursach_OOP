@@ -1,0 +1,358 @@
+@startuml
+' ==================================================
+' НАСТРОЙКИ ВЕРТИКАЛЬНОГО РАСПОЛОЖЕНИЯ
+' ==================================================
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam defaultTextAlignment left
+skinparam wrapWidth 300
+
+' Размещаем пакеты вертикально
+left to right direction
+
+' Цвета для пакетов
+skinparam packageBackgroundColor #F0F8FF
+skinparam packageBorderColor #2E86C1
+skinparam packageFontSize 14
+skinparam packageFontStyle bold
+
+' ==================================================
+' ПАКЕТ MODEL (самый верхний)
+' ==================================================
+package "model" {
+    
+    class User {
+        - id : int
+        - fullName : String
+        - password : String
+        - email : String
+        - phone : String
+        - roles : List<String>
+        + User()
+        + getters/setters
+        + addRole()
+        + hasRole()
+    }
+    
+    class Car {
+        - id : int
+        - brand : String
+        - model : String
+        - year : int
+        - vin : String
+        - licensePlate : String
+        - ownerId : int
+        - registrationDate : LocalDate
+        + Car()
+        + getters/setters
+    }
+    
+    class Repair {
+        - id : int
+        - carId : int
+        - description : String
+        - status : String
+        - cost : double
+        - startDate : LocalDate
+        - endDate : LocalDate
+        - mechanicId : int
+        + Repair()
+        + getters/setters
+        + getStatusText()
+    }
+    
+    class CarBrand {
+        - id : int
+        - name : String
+        - createdBy : int
+        - createdAt : LocalDateTime
+        + CarBrand()
+        + getters/setters
+    }
+    
+    class CarModel {
+        - id : int
+        - brandId : int
+        - brandName : String
+        - name : String
+        - createdBy : int
+        - createdAt : LocalDateTime
+        + CarModel()
+        + getters/setters
+    }
+    
+    class CarListItem {
+        - car : Car
+        - displayText : String
+        + CarListItem()
+        + getCar()
+    }
+    
+    class DatabaseConnection {
+        - DB_URL : String
+        - connection : Connection
+        + {static} getConnection()
+        + {static} closeConnection()
+    }
+}
+
+' ==================================================
+' ПАКЕТ DAO
+' ==================================================
+package "dao" {
+    
+    interface IUserDAO {
+        + createUser(User) : boolean
+        + authenticate(String, String) : User
+        + findByEmailOrPhone(String) : User
+        + getAllUsers() : List<User>
+        + getUsersByRole(String) : List<User>
+        + addRoleToUser(int, String) : boolean
+        + updateUser(User) : boolean
+        + getUserById(int) : User
+        + deleteUser(int) : boolean
+    }
+    
+    interface ICarDAO {
+        + addCar(Car) : boolean
+        + deleteCar(int) : boolean
+        + getCarsByOwner(int) : List<Car>
+        + getAllCars() : List<Car>
+        + getCarById(int) : Car
+    }
+    
+    interface IRepairDAO {
+        + addRepair(Repair) : boolean
+        + getRepairsByCar(int) : List<Repair>
+        + getAllRepairs() : List<Repair>
+        + updateRepairStatus(int, String) : boolean
+        + completeRepair(int) : boolean
+        + getRepairById(int) : Repair
+        + deleteRepair(int) : boolean
+    }
+    
+    interface ICarBrandDAO {
+        + addBrand(CarBrand) : boolean
+        + getBrandById(int) : CarBrand
+        + getAllBrands() : List<CarBrand>
+        + deleteBrand(int) : boolean
+    }
+    
+    interface ICarModelDAO {
+        + addModel(CarModel) : boolean
+        + getModelById(int) : CarModel
+        + getModelsByBrand(int) : List<CarModel>
+        + getAllModels() : List<CarModel>
+        + deleteModel(int) : boolean
+    }
+}
+
+' ==================================================
+' ПАКЕТ SERVICE
+' ==================================================
+package "service" {
+    
+    interface IAuthService {
+        + login(String, String) : User
+        + register(User, String) : boolean
+    }
+    
+    interface IUserService {
+        + updateUser(User) : boolean
+        + getUserById(int) : User
+        + getAllUsers() : List<User>
+        + getUsersByRole(String) : List<User>
+        + deleteUser(int) : boolean
+    }
+    
+    interface ICarService {
+        + addCar(Car) : boolean
+        + deleteCar(int) : boolean
+        + getClientCars(int) : List<Car>
+        + getAllCars() : List<Car>
+        + getCarById(int) : Car
+    }
+    
+    interface IRepairService {
+        + addRepair(Repair) : boolean
+        + getCarRepairs(int) : List<Repair>
+        + getAllRepairs() : List<Repair>
+        + updateRepairStatus(int, String) : boolean
+        + deleteRepair(int) : boolean
+    }
+    
+    interface ICarBrandService {
+        + addBrand(String, int) : boolean
+        + getAllBrands() : List<CarBrand>
+        + deleteBrand(int) : boolean
+    }
+    
+    interface ICarModelService {
+        + addModel(String, String, int) : boolean
+        + getModelsByBrandName(String) : List<CarModel>
+        + getModelNamesByBrand(String) : List<String>
+        + deleteModel(int) : boolean
+    }
+}
+
+' ==================================================
+' ПАКЕТ CONTROLLER
+' ==================================================
+package "controller" {
+    
+    class AuthController {
+        - authService : IAuthService
+        - userService : IUserService
+        - loginView : LoginView
+        - registrationView : RegistrationView
+        + handleLogin()
+        + handleRegister()
+        + handleLinkAccount()
+    }
+    
+    class ClientController {
+        - currentUser : User
+        - view : ClientView
+        - carService : ICarService
+        - repairService : IRepairService
+        - userService : IUserService
+        + handleViewCars()
+        + handleAddCar()
+        + handleDeleteCar()
+        + handleUpdateProfile()
+    }
+    
+    class MechanicController {
+        - currentUser : User
+        - view : MechanicView
+        - carService : ICarService
+        - repairService : IRepairService
+        - userService : IUserService
+        + handleViewCars()
+        + handleAddRepair()
+        + handleUpdateRepairStatus()
+        + getClients()
+    }
+    
+    class AdminController {
+        - currentUser : User
+        - view : AdminView
+        - userService : IUserService
+        - carService : ICarService
+        - repairService : IRepairService
+        - brandService : ICarBrandService
+        - modelService : ICarModelService
+        + getAllUsers()
+        + deleteUser()
+        + getAllCars()
+        + deleteCar()
+        + getAllRepairs()
+        + deleteRepair()
+        + getAllBrands()
+        + deleteBrand()
+        + getAllModels()
+        + deleteModel()
+    }
+}
+
+' ==================================================
+' ПАКЕТ VIEW (сокращенный)
+' ==================================================
+package "view" {
+    
+    class LoginView
+    class RegistrationView
+    class ClientView
+    class MechanicView
+    class AdminView
+    class ProfileDialog
+    class AddCarDialog
+    class AddRepairDialog
+    class ChooseRoleDialog
+    class EnterPasswordDialog
+    class LinkAccountDialog
+    class PasswordOnlyDialog
+    class ChangePasswordDialog
+}
+
+' ==================================================
+' ПАКЕТ UTILS
+' ==================================================
+package "utils" {
+    
+    class InputValidator {
+        + {static} validateName(String) : String
+        + {static} validateEmail(String) : String
+        + {static} validatePhone(String) : String
+        + {static} isValidVin(String) : boolean
+        + {static} isValidLicensePlate(String) : boolean
+    }
+}
+
+' ==================================================
+' ОСНОВНЫЕ КЛАССЫ
+' ==================================================
+class Main
+class AppInitializer
+
+' ==================================================
+' ОСНОВНЫЕ СВЯЗИ
+' ==================================================
+
+Main --> AppInitializer
+AppInitializer --> AuthController
+AppInitializer --> LoginView
+AppInitializer --> RegistrationView
+
+AuthController --> IAuthService
+AuthController --> IUserService
+AuthController --> LoginView
+AuthController --> RegistrationView
+AuthController --> ChooseRoleDialog
+AuthController --> LinkAccountDialog
+AuthController --> PasswordOnlyDialog
+
+ClientController --> ICarService
+ClientController --> IRepairService
+ClientController --> IUserService
+ClientController --> ClientView
+ClientController --> AddCarDialog
+ClientController --> ProfileDialog
+
+MechanicController --> ICarService
+MechanicController --> IRepairService
+MechanicController --> IUserService
+MechanicController --> MechanicView
+MechanicController --> AddRepairDialog
+MechanicController --> ProfileDialog
+
+AdminController --> IUserService
+AdminController --> ICarService
+AdminController --> IRepairService
+AdminController --> ICarBrandService
+AdminController --> ICarModelService
+AdminController --> AdminView
+
+' Реализации DAO (кратко)
+UserDAO .up.|> IUserDAO
+CarDAO .up.|> ICarDAO
+RepairDAO .up.|> IRepairDAO
+CarBrandDAO .up.|> ICarBrandDAO
+CarModelDAO .up.|> ICarModelDAO
+
+' Реализации Service
+AuthService .up.|> IAuthService
+UserService .up.|> IUserService
+CarService .up.|> ICarService
+RepairService .up.|> IRepairService
+CarBrandService .up.|> ICarBrandService
+CarModelService .up.|> ICarModelService
+
+' Связи с DatabaseConnection
+UserDAO --> DatabaseConnection
+CarDAO --> DatabaseConnection
+RepairDAO --> DatabaseConnection
+CarBrandDAO --> DatabaseConnection
+CarModelDAO --> DatabaseConnection
+
+@enduml

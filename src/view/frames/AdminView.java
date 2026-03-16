@@ -76,8 +76,14 @@ public class AdminView extends JFrame {
         systemMenu.add(exitMenuItem);
 
         JMenu helpMenu = new JMenu("Помощь");
+        JMenuItem userGuideMenuItem = new JMenuItem("Руководство пользователя");
         JMenuItem aboutMenuItem = new JMenuItem("О программе");
+
+        userGuideMenuItem.addActionListener(e -> showUserGuide());
         aboutMenuItem.addActionListener(e -> showAbout());
+
+        helpMenu.add(userGuideMenuItem);
+        helpMenu.addSeparator();
         helpMenu.add(aboutMenuItem);
 
         menuBar.add(systemMenu);
@@ -92,7 +98,7 @@ public class AdminView extends JFrame {
 
         JButton refreshButton = new JButton("Обновить");
         JButton deleteButton = new JButton("Удалить выбранное");
-        JButton logoutButton = new JButton("Выйти");
+        JButton logoutButton = new JButton("Выйти из аккаунта");
 
         refreshButton.addActionListener(e -> loadData());
         deleteButton.addActionListener(e -> onDelete());
@@ -115,7 +121,7 @@ public class AdminView extends JFrame {
 
     private void loadUsers() {
         List<User> users = controller.getAllUsers();
-        String[] columns = {"ID", "ФИО", "Роли", "Email", "Телефон"};
+        String[] columns = {"ID", "ФИО", "Роли", "Email", "Телефон", "Авто", "Ремонты"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -124,12 +130,25 @@ public class AdminView extends JFrame {
         };
 
         for (User user : users) {
+            int carsCount = 0;
+            int repairsCount = 0;
+
+            // Получаем данные через контроллер
+            if (user.hasRole("CLIENT")) {
+                carsCount = controller.getClientCarsCount(user.getId());
+            }
+            if (user.hasRole("MECHANIC")) {
+                repairsCount = controller.getMechanicRepairsCount(user.getId());
+            }
+
             model.addRow(new Object[]{
                     user.getId(),
                     user.getFullName(),
-                    String.join(", ", user.getRoles()),  // ← Показываем все роли через запятую
+                    String.join(", ", user.getRoles()),
                     user.getEmail(),
-                    user.getPhone()
+                    user.getPhone(),
+                    carsCount,
+                    repairsCount
             });
         }
         usersTable.setModel(model);
@@ -137,7 +156,7 @@ public class AdminView extends JFrame {
 
     private void loadCars() {
         List<Car> cars = controller.getAllCars();
-        String[] columns = {"ID", "Марка", "Модель", "Год", "VIN", "Гос. номер", "Владелец ID"};
+        String[] columns = {"ID", "Марка", "Модель", "Год", "VIN", "Гос. номер", "Владелец", "Телефон"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -146,6 +165,10 @@ public class AdminView extends JFrame {
         };
 
         for (Car car : cars) {
+            User owner = controller.getUserById(car.getOwnerId());
+            String ownerName = (owner != null) ? owner.getFullName() : "Неизвестно";
+            String ownerPhone = (owner != null) ? owner.getPhone() : "-";
+
             model.addRow(new Object[]{
                     car.getId(),
                     car.getBrand(),
@@ -153,7 +176,8 @@ public class AdminView extends JFrame {
                     car.getYear(),
                     car.getVin(),
                     car.getLicensePlate(),
-                    car.getOwnerId()
+                    ownerName,
+                    ownerPhone
             });
         }
         carsTable.setModel(model);
@@ -161,7 +185,7 @@ public class AdminView extends JFrame {
 
     private void loadRepairs() {
         List<Repair> repairs = controller.getAllRepairs();
-        String[] columns = {"ID", "Автомобиль ID", "Описание", "Статус", "Стоимость", "Механик ID", "Дата начала", "Дата конца"};
+        String[] columns = {"ID", "Автомобиль", "Описание", "Статус", "Стоимость", "Механик", "Дата начала", "Дата конца"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -170,13 +194,23 @@ public class AdminView extends JFrame {
         };
 
         for (Repair repair : repairs) {
+            // Получаем информацию об автомобиле
+            Car car = controller.getCarById(repair.getCarId());
+            String carInfo = (car != null) ?
+                    String.format("%s %s (%d)", car.getBrand(), car.getModel(), car.getYear()) :
+                    "Автомобиль удален";
+
+            // Получаем информацию о механике
+            User mechanic = controller.getUserById(repair.getMechanicId());
+            String mechanicName = (mechanic != null) ? mechanic.getFullName() : "Механик удален";
+
             model.addRow(new Object[]{
                     repair.getId(),
-                    repair.getCarId(),
+                    carInfo,
                     repair.getDescription(),
                     repair.getStatusText(),
-                    repair.getCost(),
-                    repair.getMechanicId(),
+                    String.format("%.2f руб.", repair.getCost()),
+                    mechanicName,
                     repair.getStartDate(),
                     repair.getEndDate() != null ? repair.getEndDate() : "-"
             });
@@ -186,7 +220,7 @@ public class AdminView extends JFrame {
 
     private void loadBrands() {
         List<CarBrand> brands = controller.getAllBrands();
-        String[] columns = {"ID", "Название", "Кем создан", "Дата создания"};
+        String[] columns = {"ID", "Название", "Кем создан", "Моделей", "Дата создания"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -195,10 +229,15 @@ public class AdminView extends JFrame {
         };
 
         for (CarBrand brand : brands) {
+            User creator = controller.getUserById(brand.getCreatedBy());
+            String creatorName = (creator != null) ? creator.getFullName() : "Неизвестно";
+            int modelsCount = controller.getModelsCountByBrand(brand.getId());
+
             model.addRow(new Object[]{
                     brand.getId(),
                     brand.getName(),
-                    brand.getCreatedBy(),
+                    creatorName,
+                    modelsCount,
                     brand.getCreatedAt()
             });
         }
@@ -207,7 +246,7 @@ public class AdminView extends JFrame {
 
     private void loadModels() {
         List<CarModel> models = controller.getAllModels();
-        String[] columns = {"ID", "Марка ID", "Марка", "Название", "Кем создан", "Дата создания"};
+        String[] columns = {"ID", "Марка", "Название", "Кем создан", "Дата создания"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -216,12 +255,14 @@ public class AdminView extends JFrame {
         };
 
         for (CarModel carModel : models) {
+            User creator = controller.getUserById(carModel.getCreatedBy());
+            String creatorName = (creator != null) ? creator.getFullName() : "Неизвестно";
+
             model.addRow(new Object[]{
                     carModel.getId(),
-                    carModel.getBrandId(),
                     carModel.getBrandName(),
                     carModel.getName(),
-                    carModel.getCreatedBy(),
+                    creatorName,
                     carModel.getCreatedAt()
             });
         }
@@ -344,7 +385,7 @@ public class AdminView extends JFrame {
     }
 
     private void showAbout() {
-        String about = "Автосервис v3.0\n\n" +
+        String about = "Автосервис v1.0\n\n" +
                 "Панель администратора\n" +
                 "Текущий пользователь: " + currentUser.getFullName() + "\n" +
                 "Роли: " + String.join(", ", currentUser.getRoles()) + "\n\n" +
@@ -352,6 +393,60 @@ public class AdminView extends JFrame {
                 "• Просмотр всех таблиц\n" +
                 "• Удаление записей";
         JOptionPane.showMessageDialog(this, about, "О программе", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showUserGuide() {
+        String guide = """
+            РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ - АДМИНИСТРАТОР
+
+            1. ЛИЧНЫЙ КАБИНЕТ
+               • Просмотр и редактирование личных данных
+               • Изменение контактной информации
+               • Смена пароля
+
+            2. УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ
+               • Просмотр всех пользователей системы
+               • Просмотр ролей каждого пользователя
+               • Удаление пользователей (кроме собственной учетной записи)
+               • При удалении пользователя автоматически удаляются все его автомобили и ремонты
+
+            3. УПРАВЛЕНИЕ АВТОМОБИЛЯМИ
+               • Просмотр всех автомобилей в системе
+               • Информация о владельцах автомобилей
+               • Удаление автомобилей (каскадно удаляются все ремонты)
+
+            4. УПРАВЛЕНИЕ РЕМОНТАМИ
+               • Просмотр всех ремонтов
+               • Отслеживание статусов ремонтов
+               • Просмотр стоимости и механиков
+               • Удаление ремонтов
+
+            5. УПРАВЛЕНИЕ МАРКАМИ И МОДЕЛЯМИ
+               • Просмотр всех марок автомобилей
+               • Просмотр всех моделей с привязкой к маркам
+               • Удаление марок (каскадно удаляются все модели)
+               • Удаление моделей
+
+            6. ОБЩИЕ ФУНКЦИИ
+               • Обновление данных в таблицах
+               • Выход из аккаунта
+               • Завершение работы приложения
+
+            ВАЖНО!
+            • Нельзя удалить собственную учетную запись
+            • Удаление пользователя удаляет все связанные с ним записи
+            • Удаление марки удаляет все связанные модели
+            """;
+
+        JTextArea guideArea = new JTextArea(guide);
+        guideArea.setEditable(false);
+        guideArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        guideArea.setMargin(new Insets(10, 10, 10, 10));
+
+        JScrollPane scrollPane = new JScrollPane(guideArea);
+        scrollPane.setPreferredSize(new Dimension(700, 500));
+
+        JOptionPane.showMessageDialog(this, scrollPane, "Руководство пользователя", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void showView() {
